@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react'
+import { Briefcase, Sprout, ClipboardList, ChevronLeft, Check } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
 
 const QUESTIONS = [
     {
@@ -48,24 +50,25 @@ const QUESTIONS = [
     },
 ]
 
-const CAT_COLORS = ['#FF6B35', '#7B5EA7', '#1B4D8E']
-const CAT_EMOJIS = ['💼', '🌱', '📋']
+const CAT_COLORS = ['#FF5A00', '#4F46E5', '#16A34A']
+const CAT_BG = ['#FFF5F0', '#EEEDF9', '#F0FDF4']
+const CAT_ICONS = [Briefcase, Sprout, ClipboardList]
 const CAT_NAMES = ['구직 준비도', '심리 상태', '정보 접근성']
 
 export default function Search({ onComplete, onBack }) {
     const [current, setCurrent] = useState(0)
     const [answers, setAnswers] = useState({})
     const [selected, setSelected] = useState(null)
-    const [dir, setDir] = useState('in')
+    const [direction, setDirection] = useState(1) // 1 for next, -1 for prev
 
     const q = QUESTIONS[current]
     const isLast = current === QUESTIONS.length - 1
     const color = CAT_COLORS[q.catIdx]
+    const bgColor = CAT_BG[q.catIdx]
 
     useEffect(() => {
         setSelected(answers[q.id] ?? null)
-        setDir('in')
-    }, [current])
+    }, [current, answers, q.id])
 
     const handleNext = () => {
         if (selected === null) return
@@ -82,92 +85,165 @@ export default function Search({ onComplete, onBack }) {
             })
             onComplete({ totalScore: total, categoryScores: catScores })
         } else {
-            setDir('out')
-            setTimeout(() => setCurrent((c) => c + 1), 180)
+            setDirection(1)
+            setCurrent((c) => c + 1)
         }
     }
 
     const handlePrev = () => {
         if (current === 0) onBack()
         else {
-            setDir('out')
-            setTimeout(() => setCurrent((c) => c - 1), 180)
+            setDirection(-1)
+            setCurrent((c) => c - 1)
         }
     }
 
-    return (
-        <div className="page search-page">
-            {/* Header */}
-            <header className="search-header">
-                <button className="back-btn" onClick={handlePrev}>
-                    ← {current === 0 ? '홈' : '이전'}
-                </button>
-                <span className="q-count">{current + 1} / {QUESTIONS.length}</span>
-            </header>
+    const variants = {
+        enter: (direction) => ({ x: direction > 0 ? 50 : -50, opacity: 0 }),
+        center: { zIndex: 1, x: 0, opacity: 1 },
+        exit: (direction) => ({ zIndex: 0, x: direction < 0 ? 50 : -50, opacity: 0 })
+    };
 
-            {/* Progress */}
-            <div className="progress-wrap">
+    return (
+        <div className="flex flex-col h-full w-full bg-[#F8F9FA] text-[#111] relative overflow-hidden">
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 pt-5 pb-4 bg-white sticky top-0 z-20 border-b border-[#F0F0F0]">
+                <button 
+                    onClick={handlePrev} 
+                    className="flex items-center gap-1 text-[#666] hover:text-[#111] transition-colors font-medium -ml-2"
+                >
+                    <ChevronLeft size={22} />
+                    <span>{current === 0 ? '홈' : '이전'}</span>
+                </button>
+                <div className="text-[14px] font-bold px-3 py-1 rounded-full" style={{ color: color, backgroundColor: bgColor }}>
+                    {current + 1} / {QUESTIONS.length}
+                </div>
+            </div>
+
+            {/* Progress Bar */}
+            <div className="w-full bg-[#E5E7EB] h-1.5 relative">
                 <div
-                    className="progress-fill"
+                    className="absolute top-0 left-0 h-full transition-all duration-300 ease-out rounded-r-full"
                     style={{
-                        width: `${((current + (selected !== null ? 0.5 : 0)) / QUESTIONS.length) * 100}%`,
-                        background: color,
+                        width: `${((current + (selected !== null ? 1 : 0)) / QUESTIONS.length) * 100}%`,
+                        backgroundColor: color,
                     }}
                 />
             </div>
 
             {/* Category tabs */}
-            <div className="cat-tabs">
-                {CAT_NAMES.map((name, i) => (
-                    <div
-                        key={name}
-                        className={`cat-tab ${q.catIdx === i ? 'cat-active' : q.catIdx > i ? 'cat-done' : ''}`}
-                        style={{ '--cc': CAT_COLORS[i] }}
-                    >
-                        <div className="cat-dot">{CAT_EMOJIS[i]}</div>
-                        <span className="cat-name-text">{name}</span>
-                    </div>
-                ))}
-            </div>
-
-            {/* Question */}
-            <div className={`q-wrap ${dir === 'out' ? 'q-out' : 'q-in'}`}>
-                <div className="q-cat-tag" style={{ background: color + '22', color }}>
-                    {CAT_EMOJIS[q.catIdx]} {q.cat}
-                </div>
-
-                <h2 className="q-text">Q{q.id}. {q.text}</h2>
-
-                <div className="options">
-                    {q.options.map((opt, i) => (
-                        <button
-                            key={i}
-                            className={`option ${selected === i ? 'opt-selected' : ''}`}
-                            style={{ '--oc': color }}
-                            onClick={() => setSelected(i)}
+            <div className="bg-white px-6 py-4 flex gap-3 overflow-x-auto scrollbar-hide border-b border-[#F0F0F0] shrink-0">
+                <style>{`.scrollbar-hide::-webkit-scrollbar { display: none; } .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }`}</style>
+                {CAT_NAMES.map((name, i) => {
+                    const isActive = q.catIdx === i;
+                    const isDone = q.catIdx > i;
+                    const Icon = CAT_ICONS[i];
+                    
+                    return (
+                        <div
+                            key={name}
+                            className={`flex items-center gap-2 px-3 py-2 rounded-xl transition-all whitespace-nowrap ${
+                                isActive ? 'shadow-sm border border-transparent' : 'opacity-50 border border-[#E5E7EB]'
+                            }`}
+                            style={{ 
+                                backgroundColor: isActive ? CAT_BG[i] : (isDone ? '#F5F5F5' : '#FFF'),
+                                borderColor: isActive ? CAT_COLORS[i] : '',
+                                color: isActive ? CAT_COLORS[i] : '#999'
+                            }}
                         >
-                            <div className="opt-circle">
-                                {selected === i ? '✓' : ['①', '②', '③'][i]}
-                            </div>
-                            <span className="opt-text">{opt}</span>
-                        </button>
-                    ))}
-                </div>
+                            <Icon size={16} strokeWidth={isActive ? 2.5 : 2} />
+                            <span className={`text-[13px] ${isActive ? 'font-bold' : 'font-medium'}`}>{name}</span>
+                        </div>
+                    )
+                })}
             </div>
 
-            {/* Next */}
-            <div className="search-footer">
-                <button
-                    className="btn-primary"
+            {/* Question Area */}
+            <div className="flex-1 overflow-y-auto px-6 pt-8 pb-32 relative">
+                <AnimatePresence custom={direction} mode="wait">
+                    <motion.div
+                        key={current}
+                        custom={direction}
+                        variants={variants}
+                        initial="enter"
+                        animate="center"
+                        exit="exit"
+                        transition={{ duration: 0.3, ease: "easeInOut" }}
+                        className="w-full"
+                    >
+                        <div 
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[12px] font-bold mb-4"
+                            style={{ backgroundColor: bgColor, color: color }}
+                        >
+                            {(() => {
+                                const Icon = CAT_ICONS[q.catIdx];
+                                return <Icon size={14} strokeWidth={2.5} />;
+                            })()}
+                            {q.cat}
+                        </div>
+
+                        <h2 className="text-[22px] font-extrabold leading-[1.4] tracking-tight mb-8 break-keep">
+                            <span style={{ color: color }} className="mr-1">Q{q.id}.</span>
+                            {q.text}
+                        </h2>
+
+                        <div className="flex flex-col gap-3">
+                            {q.options.map((opt, i) => {
+                                const isSelected = selected === i;
+                                return (
+                                    <motion.button
+                                        whileTap={{ scale: 0.98 }}
+                                        key={i}
+                                        onClick={() => setSelected(i)}
+                                        className={`w-full text-left p-5 rounded-[16px] border-[1.5px] flex items-center gap-4 transition-all ${
+                                            isSelected 
+                                            ? 'shadow-md bg-white' 
+                                            : 'border-[#E5E7EB] bg-white text-[#555] hover:border-[#D1D5DB]'
+                                        }`}
+                                        style={{
+                                            borderColor: isSelected ? color : undefined,
+                                        }}
+                                    >
+                                        <div 
+                                            className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 border-[1.5px] transition-colors`}
+                                            style={{
+                                                borderColor: isSelected ? color : '#D1D5DB',
+                                                backgroundColor: isSelected ? color : 'transparent',
+                                                color: isSelected ? 'white' : '#999'
+                                            }}
+                                        >
+                                            {isSelected ? <Check size={14} strokeWidth={3} /> : <span className="text-[12px] font-bold">{i + 1}</span>}
+                                        </div>
+                                        <span className={`text-[15px] ${isSelected ? 'font-bold text-[#111]' : 'font-medium'}`}>
+                                            {opt}
+                                        </span>
+                                    </motion.button>
+                                )
+                            })}
+                        </div>
+                    </motion.div>
+                </AnimatePresence>
+            </div>
+
+            {/* Footer Action */}
+            <div className="absolute bottom-0 left-0 w-full bg-white/80 backdrop-blur-xl border-t border-black/[0.04] p-6 pb-safe-offset z-50">
+                <style>{`.pb-safe-offset { padding-bottom: calc(max(env(safe-area-inset-bottom), 24px)); }`}</style>
+                <motion.button
+                    whileTap={selected !== null ? { scale: 0.98 } : {}}
                     onClick={handleNext}
                     disabled={selected === null}
+                    className={`w-full py-4 rounded-[16px] text-[16px] font-bold flex justify-center items-center transition-all duration-300 ${
+                        selected !== null 
+                        ? 'text-white shadow-[0_8px_20px_rgba(0,0,0,0.15)]' 
+                        : 'bg-[#E5E7EB] text-[#A1A1AA] cursor-not-allowed'
+                    }`}
                     style={{
-                        background: selected !== null ? color : '#CCC',
-                        boxShadow: selected !== null ? `0 4px 16px ${color}55` : 'none',
+                        backgroundColor: selected !== null ? color : undefined,
+                        boxShadow: selected !== null ? `0 8px 24px ${color}66` : undefined
                     }}
                 >
-                    {isLast ? '결과 보기 →' : '다음 문항 →'}
-                </button>
+                    {isLast ? '진단 완료 · 결과 보기' : '다음 문항으로'}
+                </motion.button>
             </div>
         </div>
     )

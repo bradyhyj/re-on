@@ -1,38 +1,48 @@
 import { useEffect } from 'react'
+import { Briefcase, Target, Sprout, Calendar, RotateCcw, Home, ChevronRight, ChevronLeft, Award, User } from 'lucide-react'
+import { motion } from 'framer-motion'
 
 const TRACKS = {
     job: {
-        emoji: '💼', label: '취업 정보',
+        icon: <Briefcase size={24} />, label: '취업 정보',
         desc: '대구 청년 맞춤 정책과 공고를 AI가 자동 추천해드려요.',
         detail: '워크넷 연동 맞춤 공고 · 대구형 청년 수당 · 월세 지원 매칭',
-        color: '#FF6B35', bg: '#FFF3EE', range: '9~13점',
+        color: '#FF5A00', bg: '#FFF5F0', reason: '정보 부족 보완',
     },
     skill: {
-        emoji: '🎯', label: '역량 개발',
+        icon: <Target size={24} />, label: '역량 개발',
         desc: 'AI가 분석한 역량 진단과 단계별 커리어 로드맵을 제공해요.',
         detail: 'AI 역량 오각형 그래프 · 맞춤 국비 교육 연계 · 퀘스트형 목표',
-        color: '#2D6A4F', bg: '#EEF7F2', range: '14~19점',
+        color: '#FF8540', bg: '#FFF5F0', reason: '실전 역량 강화',
     },
     mental: {
-        emoji: '🌱', label: '심리 회복',
+        icon: <Sprout size={24} />, label: '심리 회복',
         desc: 'AI 상담과 성장 타임라인으로 꾸준히 준비했음을 보여줘요.',
         detail: 'AI 대화 상담 · 성장 타임라인 · 커뮤니티 · 경험 추출기',
-        color: '#7B5EA7', bg: '#F3EEF9', range: '20~27점',
+        color: '#FFB080', bg: '#FFF5F0', reason: '심리 안정 케어',
     },
 }
 
-function getTrack(total) {
-    if (total <= 13) return 'job'
-    if (total <= 19) return 'skill'
-    return 'mental'
+function getTrack(categoryScores) {
+    // categoryScores = [구직 준비도(역량), 심리 상태, 정보 접근성]
+    // 점수가 가장 높은(부족함이 가장 큰) 파트를 메인 트랙으로 추천합니다.
+    const scores = [
+        { key: 'skill', score: categoryScores[0] },  // 구직 준비도 -> 역량 개발 트랙
+        { key: 'mental', score: categoryScores[1] }, // 심리 상태 -> 심리 회복 트랙
+        { key: 'job', score: categoryScores[2] }     // 정보 접근성 -> 취업 정보 트랙
+    ];
+    
+    // 내림차순 정렬 (가장 점수가 높은 항목이 첫 번째)
+    scores.sort((a, b) => b.score - a.score);
+    return scores[0].key;
 }
 
 /* ── SVG 레이더 그래프 (5각형) ── */
 function Radar({ scores }) {
-    const SIZE = 200
+    const SIZE = 240
     const CX = SIZE / 2
     const CY = SIZE / 2
-    const R = 70
+    const R = 80
     const N = 5
 
     // 5개 축 데이터 (3개 카테고리 → 5축으로 배분)
@@ -59,35 +69,46 @@ function Radar({ scores }) {
 
     const axisPts = Array.from({ length: N }, (_, i) => pt(i, 1))
     const dataPts = vals.map((v, i) => pt(i, v / MAX))
-    const labelPts = Array.from({ length: N }, (_, i) => pt(i, 1.28))
+    const labelPts = Array.from({ length: N }, (_, i) => pt(i, 1.3))
 
     return (
-        <svg viewBox={`0 0 ${SIZE} ${SIZE}`} width="200" height="200">
+        <svg viewBox={`0 0 ${SIZE} ${SIZE}`} className="w-full max-w-[240px] mx-auto overflow-visible">
             {/* grid */}
             {bgLevels.map((lv) => (
                 <polygon
                     key={lv}
                     points={toPolyStr(Array.from({ length: N }, (_, i) => pt(i, lv)))}
-                    fill="none" stroke="#E8E6E1" strokeWidth="1"
+                    fill="none" stroke="#E5E7EB" strokeWidth="1"
                 />
             ))}
             {/* axes */}
             {axisPts.map((p, i) => (
-                <line key={i} x1={CX} y1={CY} x2={p.x} y2={p.y} stroke="#E8E6E1" strokeWidth="1" />
+                <line key={i} x1={CX} y1={CY} x2={p.x} y2={p.y} stroke="#E5E7EB" strokeWidth="1" />
             ))}
-            {/* data */}
-            <polygon
+            {/* data fill */}
+            <motion.polygon
+                initial={{ opacity: 0, scale: 0.5 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 1, type: "spring" }}
+                style={{ transformOrigin: `${CX}px ${CY}px` }}
                 points={toPolyStr(dataPts)}
-                fill="rgba(255,107,53,0.2)" stroke="#FF6B35" strokeWidth="2" strokeLinejoin="round"
+                fill="rgba(255,90,0,0.15)" stroke="#FF5A00" strokeWidth="2.5" strokeLinejoin="round"
             />
+            {/* dots */}
             {dataPts.map((p, i) => (
-                <circle key={i} cx={p.x} cy={p.y} r="4" fill="#FF6B35" />
+                <motion.circle 
+                    key={i} 
+                    initial={{ r: 0 }}
+                    animate={{ r: 4.5 }}
+                    transition={{ delay: 0.5 + i * 0.1 }}
+                    cx={p.x} cy={p.y} fill="#FF5A00" stroke="#FFF" strokeWidth="1.5" 
+                />
             ))}
             {/* labels */}
             {labelPts.map((p, i) => (
                 <text key={i} x={p.x} y={p.y}
                     textAnchor="middle" dominantBaseline="middle"
-                    fontSize="7.5" fill="#5A5A5A" fontFamily="Noto Sans KR" fontWeight="500"
+                    fontSize="11" fill="#71717A" fontFamily="inherit" fontWeight="600"
                 >
                     {labels[i]}
                 </text>
@@ -96,127 +117,179 @@ function Radar({ scores }) {
     )
 }
 
-export default function Result({ scores, onRetry, onHome }) {
+export default function Result({ scores, onRetry, onHome, onStartTrack, onProfile }) {
     const { totalScore, categoryScores } = scores
-    const trackKey = getTrack(totalScore)
+    const trackKey = getTrack(categoryScores)
     const track = TRACKS[trackKey]
     const others = Object.keys(TRACKS).filter((k) => k !== trackKey)
 
     const catNames = ['구직 준비도', '심리 상태', '정보 접근성']
-    const catColors = ['#FF6B35', '#7B5EA7', '#1B4D8E']
+    const catColors = ['#FF8540', '#FFB080', '#FF5A00']
 
-    useEffect(() => {
-        const els = document.querySelectorAll('.rr')
-        els.forEach((el, i) => {
-            el.style.opacity = '0'
-            el.style.transform = 'translateY(20px)'
-            el.style.transition = `opacity 0.5s ease ${0.1 + i * 0.12}s, transform 0.5s ease ${0.1 + i * 0.12}s`
-            setTimeout(() => {
-                el.style.opacity = '1'
-                el.style.transform = 'translateY(0)'
-            }, 50)
+    const stagger = {
+        hidden: { opacity: 0, y: 20 },
+        visible: (i = 1) => ({
+            opacity: 1,
+            y: 0,
+            transition: { staggerChildren: 0.1, delayChildren: 0.1 * i, duration: 0.6 }
         })
-    }, [])
+    };
+
+    const item = {
+        hidden: { opacity: 0, y: 20 },
+        visible: { opacity: 1, y: 0, transition: { duration: 0.5 } }
+    };
 
     return (
-        <div className="page result-page">
-            <header className="result-header">
-                <button className="back-btn" onClick={onHome}>← 홈으로</button>
-                <span className="result-title">진단 결과</span>
-                <div style={{ width: 60 }} />
-            </header>
-
-            {/* Score banner */}
-            <div className="score-banner rr" style={{ background: track.color }}>
-                <div className="score-label-text">총 점수</div>
-                <div className="score-num">{totalScore}<span className="score-denom"> / 27</span></div>
-                <div className="score-track">→ {track.label} 트랙 추천</div>
+        <div className="flex flex-col h-full w-full bg-[#F8F9FA] text-[#111] overflow-hidden">
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 pt-5 pb-4 bg-white sticky top-0 z-20 border-b border-[#F0F0F0]">
+                <div className="w-[70px]"></div>
+                <div className="text-[17px] font-bold">진단 결과</div>
+                <button 
+                    onClick={onProfile}
+                    className="w-[70px] flex justify-end text-[#666] hover:text-[#111] transition-colors"
+                >
+                    <User size={22} />
+                </button>
             </div>
 
-            {/* Radar */}
-            <section className="radar-sec rr">
-                <div className="sec-title">나의 현재 상태</div>
-                <div className="radar-center">
-                    <Radar scores={categoryScores} />
-                </div>
-
-                <div className="cat-bars">
-                    {catNames.map((name, i) => (
-                        <div className="cat-bar" key={name}>
-                            <div className="cat-bar-row">
-                                <span className="cat-bar-name">{name}</span>
-                                <span className="cat-bar-val" style={{ color: catColors[i] }}>
-                                    {categoryScores[i]}<span className="cat-bar-max">/9</span>
-                                </span>
-                            </div>
-                            <div className="bar-bg">
-                                <div
-                                    className="bar-fill"
-                                    style={{
-                                        width: `${(categoryScores[i] / 9) * 100}%`,
-                                        background: catColors[i],
-                                        transition: `width 0.8s ease ${0.5 + i * 0.1}s`,
-                                    }}
-                                />
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            </section>
-
-            {/* Recommended */}
-            <section className="rec-sec rr">
-                <div className="sec-title">추천 트랙</div>
-                <div className="rec-card" style={{ background: track.bg, borderColor: track.color }}>
-                    <div className="rec-head">
-                        <span className="rec-emoji">{track.emoji}</span>
-                        <div>
-                            <div className="rec-badge" style={{ background: track.color }}>추천</div>
-                            <div className="rec-name">{track.label}</div>
-                        </div>
+            <div className="flex-1 overflow-y-auto pb-32">
+                
+                {/* Score banner */}
+                <motion.div 
+                    initial={{ opacity: 0, y: -20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6 }}
+                    className="bg-white px-6 py-8 flex flex-col items-center border-b border-[#F0F0F0]"
+                >
+                    <div className="w-16 h-16 rounded-full bg-[#FFF5F0] flex items-center justify-center text-[#FF5A00] mb-3">
+                        <Award size={32} strokeWidth={2} />
                     </div>
-                    <p className="rec-desc">{track.desc}</p>
-                    <div className="rec-detail">{track.detail}</div>
-                    <button
-                        className="btn-primary"
-                        style={{ background: track.color, boxShadow: `0 4px 16px ${track.color}44` }}
-                    >
-                        {track.label} 시작하기 →
-                    </button>
-                </div>
-            </section>
+                    <div className="text-[15px] font-bold text-[#666] mb-1">나의 종합 진단 점수</div>
+                    <div className="text-[42px] font-extrabold leading-none mb-3 text-[#111] tracking-tight">
+                        {totalScore}<span className="text-[20px] text-[#A1A1AA] font-bold"> / 27</span>
+                    </div>
+                    <div className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full font-bold text-[14px]" style={{ backgroundColor: track.bg, color: track.color }}>
+                        {track.label} 트랙 추천
+                    </div>
+                </motion.div>
 
-            {/* Other tracks */}
-            <section className="other-sec rr">
-                <div className="sec-title">다른 트랙도 언제든 이용할 수 있어요</div>
-                {others.map((k) => {
-                    const t = TRACKS[k]
-                    return (
-                        <div key={k} className="other-card" style={{ background: t.bg }}>
-                            <span className="other-emoji">{t.emoji}</span>
-                            <div className="other-info">
-                                <div className="other-name">{t.label}</div>
-                                <div className="other-range">{t.range}</div>
-                            </div>
-                            <span className="other-arrow" style={{ color: t.color }}>›</span>
+                <motion.div variants={stagger} initial="hidden" animate="visible" className="px-6 py-8 flex flex-col gap-8">
+                    
+                    {/* Radar Section */}
+                    <motion.section variants={item} className="bg-white p-6 rounded-[24px] shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-black/[0.02]">
+                        <div className="text-[18px] font-bold mb-6">나의 현재 상태</div>
+                        <div className="mb-8 flex justify-center">
+                            <Radar scores={categoryScores} />
                         </div>
-                    )
-                })}
-            </section>
 
-            {/* Retest */}
-            <div className="retest rr">
-                <span>🗓️</span>
-                <div>
-                    <div className="retest-title">1개월 후 재검사 권장</div>
-                    <div className="retest-desc">상황이 변하면 추천 트랙도 달라질 수 있어요</div>
-                </div>
+                        <div className="flex flex-col gap-4">
+                            {catNames.map((name, i) => (
+                                <div key={name}>
+                                    <div className="flex justify-between items-center mb-1.5">
+                                        <span className="text-[14px] font-bold text-[#555]">{name}</span>
+                                        <span className="text-[14px] font-bold" style={{ color: catColors[i] }}>
+                                            {categoryScores[i]}<span className="text-[#A1A1AA] text-[12px]">/9</span>
+                                        </span>
+                                    </div>
+                                    <div className="w-full bg-[#F5F5F5] h-2.5 rounded-full overflow-hidden">
+                                        <motion.div
+                                            initial={{ width: 0 }}
+                                            animate={{ width: `${(categoryScores[i] / 9) * 100}%` }}
+                                            transition={{ duration: 1, delay: 0.5 + i * 0.2 }}
+                                            className="h-full rounded-full"
+                                            style={{ backgroundColor: catColors[i] }}
+                                        />
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </motion.section>
+
+                    {/* Recommended Track */}
+                    <motion.section variants={item}>
+                        <div className="text-[20px] font-extrabold mb-1 px-1 leading-tight tracking-tight text-[#111]">
+                            메인 트랙 선택하고<br/>서비스 이용하기
+                        </div>
+                        <div className="text-[14px] font-bold mb-4 px-1 text-[#999]">AI 추천 트랙</div>
+                        <div className="p-6 rounded-[24px] border-[1.5px]" style={{ backgroundColor: track.bg, borderColor: `${track.color}40` }}>
+                            <div className="flex items-center gap-3 mb-4">
+                                <div className="w-12 h-12 rounded-[14px] bg-white flex items-center justify-center shadow-sm" style={{ color: track.color }}>
+                                    {track.icon}
+                                </div>
+                                <div>
+                                    <div className="inline-block px-2 py-0.5 rounded text-[10px] font-bold text-white mb-1" style={{ backgroundColor: track.color }}>추천</div>
+                                    <div className="text-[20px] font-bold text-[#111]">{track.label}</div>
+                                </div>
+                            </div>
+                            <p className="text-[15px] text-[#555] font-medium leading-[1.6] mb-4 break-keep">
+                                {track.desc}
+                            </p>
+                            <div className="bg-white/60 p-3 rounded-xl text-[13px] font-bold text-[#666] mb-6">
+                                {track.detail}
+                            </div>
+                            <motion.button
+                                whileTap={{ scale: 0.98 }}
+                                onClick={() => onStartTrack && onStartTrack(trackKey)}
+                                className="w-full py-4 rounded-[14px] text-white font-bold text-[15px] shadow-lg flex items-center justify-center gap-1.5 tracking-tight"
+                                style={{ backgroundColor: track.color, boxShadow: `0 8px 24px ${track.color}50` }}
+                            >
+                                지금 바로 시작하기 <ChevronRight size={18} />
+                            </motion.button>
+                        </div>
+                    </motion.section>
+
+                    {/* Other Tracks */}
+                    <motion.section variants={item}>
+                        <div className="text-[16px] font-bold mb-4 px-1 text-[#666]">다른 트랙도 이용할 수 있어요</div>
+                        <div className="flex flex-col gap-3">
+                            {others.map((k) => {
+                                const t = TRACKS[k]
+                                return (
+                                    <motion.div 
+                                        whileTap={{ scale: 0.98 }}
+                                        onClick={() => onStartTrack && onStartTrack(k)}
+                                        key={k} 
+                                        className="bg-white p-4 rounded-[20px] shadow-[0_2px_12px_rgba(0,0,0,0.03)] border border-black/[0.02] flex items-center gap-4 cursor-pointer"
+                                    >
+                                        <div className="w-12 h-12 rounded-[12px] flex items-center justify-center shrink-0" style={{ backgroundColor: t.bg, color: t.color }}>
+                                            {t.icon}
+                                        </div>
+                                        <div className="flex-1">
+                                            <div className="text-[16px] font-bold text-[#111] mb-0.5">{t.label}</div>
+                                            <div className="text-[12px] font-medium text-[#999]">{t.reason} 추천</div>
+                                        </div>
+                                        <ChevronRight size={20} className="text-[#CCC]" />
+                                    </motion.div>
+                                )
+                            })}
+                        </div>
+                    </motion.section>
+
+                    {/* Retest Banner */}
+                    <motion.div variants={item} className="bg-[#111] rounded-[20px] p-5 flex items-center gap-4 text-white">
+                        <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center shrink-0">
+                            <Calendar size={20} className="text-white" />
+                        </div>
+                        <div>
+                            <div className="text-[15px] font-bold mb-1">1개월 후 재검사 권장</div>
+                            <div className="text-[13px] text-[#A1A1AA] break-keep font-medium">상황이 변하면 추천 트랙도 달라질 수 있어요</div>
+                        </div>
+                    </motion.div>
+                </motion.div>
             </div>
 
-            {/* Buttons */}
-            <div className="result-btns rr">
-                <button className="sub-btn" onClick={onRetry}>🔄 다시 진단하기</button>
-                <button className="sub-btn" onClick={onHome}>🏠 홈으로</button>
+            {/* Bottom Actions */}
+            <div className="absolute bottom-0 left-0 w-full bg-white/80 backdrop-blur-xl border-t border-black/[0.04] p-4 pb-safe-offset z-50">
+                <style>{`.pb-safe-offset { padding-bottom: calc(max(env(safe-area-inset-bottom), 16px)); }`}</style>
+                <motion.button 
+                    whileTap={{ scale: 0.98 }}
+                    onClick={onRetry} 
+                    className="w-full py-4 rounded-[14px] bg-white border border-[#E5E7EB] text-[#333] font-bold text-[15px] flex items-center justify-center gap-2 shadow-sm hover:bg-[#F8F9FA] transition-colors"
+                >
+                    <RotateCcw size={18} /> 다시 진단하기
+                </motion.button>
             </div>
         </div>
     )
