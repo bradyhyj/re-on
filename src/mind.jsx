@@ -53,8 +53,12 @@ export default function Mind({ onBack, onProfile, bookmarks, onToggleBookmark, o
     return (
         <div className="flex flex-col h-full w-full bg-[#F8F9FA] text-[#111] overflow-hidden">
             {/* Header */}
-            <div className="flex items-center justify-center px-6 pt-5 pb-4 bg-white sticky top-0 z-20 border-b border-[#F0F0F0]">
+            <div className="flex items-center justify-between px-6 pt-5 pb-4 bg-white sticky top-0 z-20 border-b border-[#F0F0F0]">
+                <div className="w-[60px]"></div>
                 <div className="text-[17px] font-bold">심리 회복</div>
+                <button onClick={onBack} className="w-[60px] flex justify-end text-[#666] hover:text-[#111] transition-colors">
+                    <span className="text-[15px] font-bold">뒤로</span>
+                </button>
             </div>
 
             {/* 탭 바 */}
@@ -100,17 +104,17 @@ export default function Mind({ onBack, onProfile, bookmarks, onToggleBookmark, o
                                     <MessageCircle size={140} className="absolute -right-10 -bottom-10 text-white/[0.03] rotate-12" />
                                 </div>
                                 <div className="bg-white p-6 rounded-[24px] shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-black/[0.02]">
-                                        <div className="flex items-center justify-between mb-3">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-10 h-10 rounded-full bg-[#F0FDF4] text-[#16A34A] flex items-center justify-center">
-                                                    <CalendarHeart size={20} />
-                                                </div>
-                                                <h2 className="text-[17px] font-bold">대구 청년마음건강지원</h2>
+                                    <div className="flex items-center justify-between mb-3">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 rounded-full bg-[#F0FDF4] text-[#16A34A] flex items-center justify-center">
+                                                <CalendarHeart size={20} />
                                             </div>
-                                            <button onClick={() => onToggleBookmark({ id: 'mind-program-1', title: '대구 청년마음건강지원', category: 'mind-program' })} className="text-[#CCC] hover:text-[#16A34A] transition-colors">
-                                                <Bookmark size={20} className={isBookmarked('mind-program', 'mind-program-1') ? 'text-[#16A34A] fill-[#16A34A]' : ''} />
-                                            </button>
+                                            <h2 className="text-[17px] font-bold">대구 청년마음건강지원</h2>
                                         </div>
+                                        <button onClick={() => onToggleBookmark({ id: 'mind-program-1', title: '대구 청년마음건강지원', category: 'mind-program' })} className="text-[#CCC] hover:text-[#16A34A] transition-colors">
+                                            <Bookmark size={20} className={isBookmarked('mind-program', 'mind-program-1') ? 'text-[#16A34A] fill-[#16A34A]' : ''} />
+                                        </button>
+                                    </div>
                                     <p className="text-[13px] text-[#666] leading-[1.6] mb-5 break-keep">대구시 지원 무료 전문 심리 상담 프로그램. 1:1 대면 상담을 통해 마음을 치유하세요.</p>
                                     <div className="flex gap-2">
                                         <button className="flex-1 py-3.5 bg-[#F8F9FA] text-[#111] rounded-[14px] text-[14px] font-bold border border-[#E5E7EB]">상세 보기</button>
