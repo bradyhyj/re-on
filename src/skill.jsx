@@ -33,26 +33,26 @@ function RadarChart({ data }) {
                 return <line key={i} x1={cx} y1={cy} x2={p.x} y2={p.y} stroke="#E5E7EB" strokeWidth="1" />;
             })}
             {/* 데이터 영역 */}
-            <motion.path 
+            <motion.path
                 initial={{ pathLength: 0, opacity: 0 }}
                 animate={{ pathLength: 1, opacity: 1 }}
                 transition={{ duration: 1.2, ease: "easeOut" }}
-                d={dataPath} 
-                fill="rgba(79,70,229,0.15)" 
-                stroke="#4F46E5" 
-                strokeWidth="2.5" 
-                strokeLinejoin="round" 
+                d={dataPath}
+                fill="rgba(79,70,229,0.15)"
+                stroke="#4F46E5"
+                strokeWidth="2.5"
+                strokeLinejoin="round"
             />
             {/* 점 */}
             {data.map((d, i) => {
                 const p = point(i, d.value / 100);
                 return (
-                    <motion.circle 
-                        key={i} 
+                    <motion.circle
+                        key={i}
                         initial={{ r: 0 }}
                         animate={{ r: 4 }}
                         transition={{ delay: 0.8 + (i * 0.1), duration: 0.4 }}
-                        cx={p.x} cy={p.y} fill="#4F46E5" 
+                        cx={p.x} cy={p.y} fill="#4F46E5"
                     />
                 );
             })}
@@ -87,9 +87,9 @@ export default function Skill({ scores, onBack, onProfile, bookmarks, onToggleBo
 
     useEffect(() => {
         const fetchAiData = async () => {
-            const cacheKey = 'reon_skill_ai_data';
+            const cacheKey = 'reon_skill_ai_data_v2';
             const cacheHash = JSON.stringify(radarData);
-            
+
             const cachedStr = localStorage.getItem(cacheKey);
             if (cachedStr) {
                 try {
@@ -121,6 +121,26 @@ export default function Skill({ scores, onBack, onProfile, bookmarks, onToggleBo
     }, [scores]);
 
     const { weakPoints, recommendations, quests } = aiData;
+
+    const completeQuest = (questId) => {
+        const newQuests = quests.map(q =>
+            q.id === questId ? { ...q, status: 'done' } : q
+        );
+        const newAiData = { ...aiData, quests: newQuests };
+        setAiData(newAiData);
+
+        const cacheKey = 'reon_skill_ai_data';
+        const cachedStr = localStorage.getItem(cacheKey);
+        if (cachedStr) {
+            try {
+                const cached = JSON.parse(cachedStr);
+                cached.data = newAiData;
+                localStorage.setItem(cacheKey, JSON.stringify(cached));
+            } catch (e) {
+                console.error(e);
+            }
+        }
+    };
 
     return (
         <div className="flex flex-col h-full w-full bg-[#F8F9FA] text-[#111] overflow-hidden">
@@ -164,7 +184,7 @@ export default function Skill({ scores, onBack, onProfile, bookmarks, onToggleBo
                                     </h1>
                                     <p className="text-[13px] text-[#4F46E5] font-bold">포트폴리오 기반 AI 분석 결과</p>
                                 </div>
-                                <button 
+                                <button
                                     onClick={onStartPortfolioSearch}
                                     className="mb-1 px-4 py-2.5 bg-white border border-[#4F46E5] text-[#4F46E5] rounded-xl text-[13px] font-bold shadow-sm hover:bg-[#F2F3FB] transition-all flex items-center gap-1.5"
                                 >
@@ -270,8 +290,8 @@ export default function Skill({ scores, onBack, onProfile, bookmarks, onToggleBo
                                                         {rec.free ? '무료' : '유료'}
                                                     </div>
                                                     <div className="flex-1 min-w-0">
-                                                        <div className="text-[13px] font-extrabold text-[#111] truncate">{rec.title}</div>
-                                                        <div className="text-[11px] text-[#999] mt-0.5">{rec.org} · {rec.tag}</div>
+                                                        <div className="text-[13px] font-extrabold text-[#111] break-keep leading-[1.4]">{rec.title}</div>
+                                                        <div className="text-[11px] text-[#999] mt-1">{rec.org} · {rec.tag}</div>
                                                     </div>
                                                     <div className="flex gap-2 shrink-0">
                                                         <button onClick={() => onToggleBookmark({ ...rec, id: `skill-rec-${i}`, category: 'skill-rec' })} className="text-[#CCC] hover:text-[#FF5A00] transition-colors">
@@ -307,26 +327,31 @@ export default function Skill({ scores, onBack, onProfile, bookmarks, onToggleBo
 
                                                     <div className={`bg-white p-5 rounded-[20px] shadow-[0_2px_12px_rgba(0,0,0,0.03)] border border-black/[0.02] transition-all
                                                         ${q.status === 'locked' ? 'opacity-50' : 'hover:-translate-y-1'}`}>
-                                                        <div className="flex items-center justify-between gap-2 mb-2">
-                                                            <div className="flex items-center gap-2">
-                                                                {q.status === 'done' && <span className="px-2 py-1 rounded bg-[#F2F3FB] text-[#4F46E5] text-[10px] font-bold">완료</span>}
-                                                                {q.status === 'current' && <span className="px-2 py-1 rounded bg-[#FFF5F0] text-[#FF5A00] text-[10px] font-bold">진행중</span>}
-                                                                {q.status === 'locked' && <Lock size={14} className="text-[#999]" />}
-                                                                <h3 className="text-[15px] font-bold text-[#111]">{q.title}</h3>
+                                                        <div className="flex items-start justify-between gap-2 mb-2">
+                                                            <div className="flex items-start gap-2 pt-0.5">
+                                                                {q.status === 'done' && <span className="shrink-0 whitespace-nowrap mt-0.5 px-2 py-0.5 rounded bg-[#F2F3FB] text-[#4F46E5] text-[11px] font-bold">완료</span>}
+                                                                {q.status === 'current' && <span className="shrink-0 whitespace-nowrap mt-0.5 px-2 py-0.5 rounded bg-[#FFF5F0] text-[#FF5A00] text-[11px] font-bold">진행중</span>}
+                                                                {q.status === 'locked' && <div className="shrink-0 mt-1"><Lock size={14} className="text-[#999]" /></div>}
+                                                                <h3 className="flex-1 text-[15px] font-bold text-[#111] leading-[1.4] break-keep">{q.title}</h3>
                                                             </div>
-                                                            <button onClick={() => onToggleBookmark({ ...q, category: 'skill-quest' })} className="text-[#CCC] hover:text-[#FF5A00] transition-colors">
+                                                            <button onClick={() => onToggleBookmark({ ...q, category: 'skill-quest' })} className="text-[#CCC] hover:text-[#FF5A00] transition-colors shrink-0 pt-0.5">
                                                                 <Bookmark size={18} className={isBookmarked('skill-quest', q.id) ? 'text-[#FF5A00] fill-[#FF5A00]' : ''} />
                                                             </button>
                                                         </div>
                                                         <p className="text-[13px] text-[#666] leading-[1.6] break-keep">{q.desc}</p>
 
-                                                        {/* 주간 목표 (current 퀘스트만) */}
+                                                        {/* 주간 목표 */}
                                                         {q.weeklyGoals && (
                                                             <div className="mt-4 pt-4 border-t border-[#F0F0F0] flex flex-col gap-2">
                                                                 {q.weeklyGoals.map((g, gi) => (
                                                                     <div key={gi} className="flex items-center gap-3">
-                                                                        <span className="text-[11px] font-bold text-[#FF5A00] bg-[#FFF5F0] px-2 py-0.5 rounded-full shrink-0">{g.week}</span>
-                                                                        <span className="text-[13px] font-medium text-[#333]">{g.task}</span>
+                                                                        <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full shrink-0
+                                                                            ${q.status === 'done' ? 'text-[#4F46E5] bg-[#F2F3FB]' : 
+                                                                            q.status === 'locked' ? 'text-[#999] bg-[#F4F4F5]' : 
+                                                                            'text-[#FF5A00] bg-[#FFF5F0]'}`}>
+                                                                            {g.week}
+                                                                        </span>
+                                                                        <span className={`text-[13px] font-medium ${q.status === 'done' ? 'text-[#666] line-through opacity-70' : q.status === 'locked' ? 'text-[#999]' : 'text-[#333]'}`}>{g.task}</span>
                                                                     </div>
                                                                 ))}
                                                             </div>
@@ -334,8 +359,8 @@ export default function Skill({ scores, onBack, onProfile, bookmarks, onToggleBo
 
                                                         {q.status === 'current' && (
                                                             <div className="mt-4 pt-4 border-t border-[#F0F0F0]">
-                                                                <button className="w-full py-3.5 bg-[#111] text-white rounded-[14px] text-[15px] font-bold flex justify-center items-center gap-2 shadow-md hover:bg-black transition-colors">
-                                                                    퀘스트 수행하기 <ChevronRight size={18} />
+                                                                <button onClick={() => completeQuest(q.id)} className="w-full py-3.5 bg-[#111] text-white rounded-[14px] text-[15px] font-bold flex justify-center items-center gap-2 shadow-md hover:bg-black transition-colors">
+                                                                    퀘스트 완료하기 <ChevronRight size={18} />
                                                                 </button>
                                                             </div>
                                                         )}

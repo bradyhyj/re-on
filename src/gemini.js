@@ -124,14 +124,14 @@ export const generateSkillRecommendations = async (radarData, careerFields) => {
     {
       "id": 1,
       "title": "퀘스트 제목 (예: 국민내일배움카드 발급)",
-      "status": "done/current/locked",
+      "status": "current/locked",
       "desc": "구체적인 퀘스트 설명",
       "weeklyGoals": [
         { "week": "이번 주", "task": "할 일" },
         { "week": "다음 주", "task": "할 일" }
       ] // 주차별 목표 (선택사항, 최대 2주)
     }
-  ] // 3~4개 퀘스트 (1개는 done, 1~2개는 current, 나머지는 locked)
+  ] // 3~4개 퀘스트 (1~2개는 current, 나머지는 locked. 처음부터 done 상태인 퀘스트는 절대 만들지 마세요.)
 }`,
         });
 
