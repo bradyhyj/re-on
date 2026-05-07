@@ -5,6 +5,28 @@ import { useState, useEffect } from 'react';
 export default function Information({ scores, onBack, onProfile, bookmarks, onToggleBookmark }) {
     const selectedFields = scores?.careerFields || [];
     
+    /*
+        TODO: 온통청년 Open API 연동 예정
+        - API Docs: https://www.youthcenter.go.kr/cmnFooter/openapiIntro/oaiDoc/20
+        - 대구 지역 zipCd (총 10개):
+          - 27000(대구광역시 전체)
+          - 27110(대구광역시 중구)
+          - 27140(대구광역시 동구)
+          - 27170(대구광역시 서구)
+          - 27200(대구광역시 남구)
+          - 27230(대구광역시 북구)
+          - 27260(대구광역시 수성구)
+          - 27290(대구광역시 달서구)
+          - 27710(대구광역시 달성군)
+          - 27720(대구광역시 군위군)
+        - 아직 API Key가 발급되지 않았으므로 아래 호출 로직은 개념적으로만 남겨둡니다.
+    */
+    // const fetchYouthPolicies = async () => {
+    //     const DAEGU_ZIP_CODES = ['27000', '27110', '27140', '27170', '27200', '27230', '27260', '27290', '27710', '27720'];
+    //     // const response = await fetch(`https://www.youthcenter.go.kr/opi/empList.do?openApiVlak=${API_KEY}&display=10&pageIndex=1&srchPolyBizSecd=${DAEGU_ZIP_CODES.join(',')}`);
+    //     // ...
+    // };
+    
     // 직무 필드에 따른 더미 데이터 매핑
     const getJobs = () => {
         if (selectedFields.includes('IT/개발')) {
