@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Briefcase, Compass, Heart, Home, Plus, User } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import First from './first'
@@ -15,14 +15,29 @@ import ReSkill from './re_skill'
 import './index.css'
 
 export default function App() {
-  const [page, setPage] = useState('first')
-  const [scores, setScores] = useState(null)
+  const [page, setPage] = useState(() => {
+    const savedScores = localStorage.getItem('reon_survey_scores');
+    const savedTrack = localStorage.getItem('reon_last_track');
+    
+    if (savedScores && savedTrack) {
+      return savedTrack; // 역량, 취업, 심리 중 마지막 선택했던 트랙으로
+    } else if (savedScores) {
+      return 'result'; // 검사는 했으나 트랙 선택 안 한 경우
+    }
+    return 'first'; // 아무 기록 없음
+  });
+
+  const [scores, setScores] = useState(() => {
+    const saved = localStorage.getItem('reon_survey_scores');
+    return saved ? JSON.parse(saved) : null;
+  });
+
   const [showSubTracks, setShowSubTracks] = useState(false)
   const [showProfileSheet, setShowProfileSheet] = useState(false)
   const [showResultSheet, setShowResultSheet] = useState(false)
   const [showSkillSheet, setShowSkillSheet] = useState(false)
   const [bookmarks, setBookmarks] = useState(() => {
-    return JSON.parse(localStorage.getItem('bookmarks') || '[]');
+    return JSON.parse(localStorage.getItem('reon_bookmarks') || '[]');
   });
 
   const toggleBookmark = (item) => {
@@ -34,7 +49,7 @@ export default function App() {
       updated = [...bookmarks, { ...item, savedAt: new Date().toISOString() }];
     }
     setBookmarks(updated);
-    localStorage.setItem('bookmarks', JSON.stringify(updated));
+    localStorage.setItem('reon_bookmarks', JSON.stringify(updated));
   };
 
   const goToSearch = () => setPage('search')
@@ -42,10 +57,30 @@ export default function App() {
   const goToPortfolioSearch = () => setPage('portfolio-search')
   const goToChat = () => setPage('chat')
   const goToFirst = () => setPage('first')
+  useEffect(() => {
+    if (['job', 'skill', 'mental'].includes(page)) {
+      localStorage.setItem('reon_last_track', page);
+    }
+  }, [page]);
+
   const goToResult = (scoreData, targetPage = 'result') => {
     if (scoreData) {
       // If we are doing a re-search or portfolio update, preserve existing scores
-      setScores(prev => (prev ? { ...prev, ...scoreData } : scoreData));
+      setScores(prev => {
+        let newScores = prev ? { ...prev, ...scoreData } : scoreData;
+        
+        // If portfolio analysis provided a new job readiness score, update the categoryScores
+        if (scoreData.jobReadinessScore && newScores.categoryScores) {
+          const newCategoryScores = [...newScores.categoryScores];
+          newCategoryScores[0] = scoreData.jobReadinessScore;
+          newScores.categoryScores = newCategoryScores;
+          newScores.totalScore = newCategoryScores.reduce((a, b) => a + b, 0);
+        }
+        
+        localStorage.setItem('reon_survey_scores', JSON.stringify(newScores));
+        localStorage.setItem('reon_survey_date', new Date().toISOString());
+        return newScores;
+      });
     }
     setPage(targetPage)
   }

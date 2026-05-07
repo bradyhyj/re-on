@@ -1,4 +1,4 @@
-import { defineConfig } from 'vite'
+/* import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 
@@ -8,4 +8,24 @@ export default defineConfig({
     react(),
     tailwindcss()
   ],
+})
+*/
+
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+import tailwindcss from '@tailwindcss/vite'
+
+// https://vite.dev/config/
+export default defineConfig({
+  plugins: [react(), tailwindcss()],
+  server: {
+    proxy: {
+      '/api': {
+        target: 'https://www.youthcenter.go.kr', // 목적지 주소
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api/, ''),
+        secure: false,
+      }
+    }
+  }
 })

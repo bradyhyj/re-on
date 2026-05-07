@@ -1,11 +1,70 @@
 import { motion } from 'framer-motion';
-import { Briefcase, ExternalLink, MapPin, Calendar, Bookmark, Star } from 'lucide-react';
+import { Briefcase, ExternalLink, MapPin, Calendar, Bookmark, Star, Loader2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
 export default function Information({ scores, onBack, onProfile, bookmarks, onToggleBookmark }) {
     const selectedFields = scores?.careerFields || [];
-    
-    // 직무 필드에 따른 더미 데이터 매핑
+
+    const [fetchedPolicies, setFetchedPolicies] = useState([]);
+    const [isLoading, setIsLoading] = useState(false);
+    const [apiError, setApiError] = useState(null);
+
+    useEffect(() => {
+        const fetchYouthPolicies = async () => {
+            const apiKey = import.meta.env.VITE_YOUTH_API_KEY;
+
+            if (!apiKey) {
+                setApiError('API Key가 필요합니다. (.env에 VITE_YOUTH_API_KEY를 설정해주세요)');
+                return;
+            }
+
+            setIsLoading(true);
+            setApiError(null);
+
+            try {
+                // 1. URL 끝에 &rtnType=json 추가
+                const url = `/api/go/ythip/getPlcy?apiKeyNm=${apiKey}&zipCd=27000&rtnType=json`;
+
+                const response = await fetch(url);
+                if (!response.ok) {
+                    throw new Error(`API 요청 실패 (${response.status})`);
+                }
+
+                // 2. 복잡한 XML 파싱(DOMParser) 삭제, 아주 간단하게 JSON으로 변환!
+                const data = await response.json();
+
+                // (선택) 에러 메시지가 포함되어 온 경우 방어 로직
+                if (data.error) {
+                    throw new Error(data.error.message || 'API 에러');
+                }
+
+                // 3. JSON 구조에 맞게 데이터 추출 (data.result.youthPolicyList)
+                const policyNodes = data.result?.youthPolicyList || [];
+
+                const policiesData = policyNodes.map(node => {
+                    return {
+                        id: node.plcyNo || '',
+                        title: node.plcyNm || '이름 없음',
+                        desc: node.plcyExplnCn || '상세 내용 없음',
+                        deadline: node.aplyYmd || node.bizPrdEtcCn || '상시접수',
+                        url: node.aplyUrlAddr || node.refUrlAddr1 || node.refUrlAddr2 || '#',
+                        category: 'policy',
+                    };
+                });
+
+                setFetchedPolicies(policiesData);
+            } catch (err) {
+                console.error(err);
+                setApiError(err.message || '데이터를 불러오는 중 문제가 발생했습니다.');
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchYouthPolicies();
+    }, []);
+
+    // 직무 필드에 따른 더미 데이터 매핑 (기존 유지)
     const getJobs = () => {
         if (selectedFields.includes('IT/개발')) {
             return [
@@ -26,19 +85,16 @@ export default function Information({ scores, onBack, onProfile, bookmarks, onTo
     };
 
     const jobs = getJobs();
-
-    const policies = [
-        { id: 101, title: '대구형 청년수당', desc: '취업 준비 기간 동안 월 50만원의 활동비를 지원하여 경제적 부담 완화', deadline: '2026-05-20', category: 'policy', dday: 'D-14' },
-        { id: 102, title: '청년 월세 특별지원', desc: '독립 청년들의 주거 안정을 위해 최대 12개월, 월 20만원 한도 지원', deadline: '2026-05-30', category: 'policy', dday: 'D-24' }
-    ];
-
     const isBookmarked = (category, id) => bookmarks.some(b => b.id === id && b.category === category);
-
 
     return (
         <div className="flex flex-col h-full w-full bg-[#F8F9FA] text-[#111] overflow-hidden">
-            <div className="flex items-center justify-center px-6 pt-5 pb-4 bg-white sticky top-0 z-20 border-b border-[#F0F0F0]">
+            <div className="flex items-center justify-between px-6 pt-5 pb-4 bg-white sticky top-0 z-20 border-b border-[#F0F0F0]">
+                <div className="w-[60px]"></div>
                 <div className="text-[17px] font-bold">취업 정보</div>
+                <button onClick={onBack} className="w-[60px] flex justify-end text-[#666] hover:text-[#111] transition-colors">
+                    <span className="text-[15px] font-bold">뒤로</span>
+                </button>
             </div>
 
             <div className="flex-1 overflow-y-auto pb-24">
@@ -59,7 +115,7 @@ export default function Information({ scores, onBack, onProfile, bookmarks, onTo
                     initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}
                     className="px-6 py-8 flex flex-col gap-10"
                 >
-                    {/* Jobs */}
+                    {/* Jobs (기존 유지) */}
                     <section>
                         <div className="flex items-center justify-between mb-5">
                             <h2 className="text-[18px] font-bold">맞춤 채용 공고</h2>
@@ -96,21 +152,49 @@ export default function Information({ scores, onBack, onProfile, bookmarks, onTo
 
                     {/* Policies */}
                     <section>
-                        <h2 className="text-[18px] font-bold mb-5">대구시 추천 정책</h2>
+                        <h2 className="text-[18px] font-bold mb-4">대구시 청년 정책</h2>
+
                         <div className="flex flex-col gap-4">
-                            {policies.map(p => (
-                                <div key={p.id} className="w-full bg-[#111] text-white p-6 rounded-[24px] shadow-lg flex flex-col">
+                            {apiError && (
+                                <div className="p-4 bg-red-50 text-red-500 rounded-[16px] text-[13px] font-bold border border-red-100 break-keep">
+                                    {apiError}
+                                </div>
+                            )}
+
+                            {isLoading && !apiError && (
+                                <div className="flex flex-col items-center justify-center py-10 gap-3 text-[#999]">
+                                    <Loader2 className="animate-spin" size={28} />
+                                    <span className="text-[13px] font-bold">정책 데이터를 불러오는 중...</span>
+                                </div>
+                            )}
+
+                            {!isLoading && !apiError && fetchedPolicies.length === 0 && (
+                                <div className="flex flex-col items-center justify-center py-10 text-[#999]">
+                                    <span className="text-[13px] font-bold">해당 지역에 등록된 정책이 없습니다.</span>
+                                </div>
+                            )}
+
+                            {!isLoading && !apiError && fetchedPolicies.length > 0 && fetchedPolicies.map(p => (
+                                <div key={p.id} className="w-full bg-[#111] text-white p-6 rounded-[24px] shadow-lg flex flex-col transition-all hover:-translate-y-1">
                                     <div className="flex justify-between items-start mb-3">
-                                        <h3 className="text-[18px] font-bold">{p.title}</h3>
-                                        <button onClick={() => onToggleBookmark(p)} className="ml-2 shrink-0 transition-transform active:scale-90">
-                                            <Bookmark size={20} className={isBookmarked('policy', p.id) ? 'text-[#FF5A00] fill-[#FF5A00]' : 'text-[#666]'} />
+                                        <h3 className="text-[17px] font-bold leading-[1.4] break-keep pr-4">{p.title}</h3>
+                                        <button onClick={() => onToggleBookmark(p)} className="shrink-0 transition-transform active:scale-90 mt-0.5">
+                                            <Bookmark size={20} className={isBookmarked('policy', p.id) ? 'text-[#FF5A00] fill-[#FF5A00]' : 'text-[#666] hover:text-white transition-colors'} />
                                         </button>
                                     </div>
-                                    <p className="text-[14px] text-[#A1A1AA] leading-[1.6] mb-6 break-keep">{p.desc}</p>
-                                    <div className="mt-auto">
-                                        <button className="flex items-center gap-1.5 text-[14px] text-[#FF5A00] font-bold">
-                                            신청하러 가기 <ExternalLink size={16} />
-                                        </button>
+                                    {/* 정책 설명 태그 수정 반영 */}
+                                    <p className="text-[13px] text-[#A1A1AA] leading-[1.6] mb-6 break-keep line-clamp-3">{p.desc}</p>
+                                    <div className="mt-auto flex justify-between items-end">
+                                        <div className="flex flex-col gap-1">
+                                            <span className="text-[10px] text-[#777]">신청 기간</span>
+                                            {/* 신청 기간 태그 수정 반영 */}
+                                            <span className="text-[11px] font-bold text-[#FF5A00] bg-[#FFF5F0]/10 px-2.5 py-1 rounded-full w-max max-w-[200px] truncate">{p.deadline}</span>
+                                        </div>
+                                        {/* 신청 URL 태그 수정 반영 */}
+                                        <a href={p.url !== '#' ? p.url : undefined} target="_blank" rel="noopener noreferrer"
+                                            className={`flex items-center gap-1.5 text-[14px] font-bold ${p.url !== '#' ? 'text-[#FF5A00] hover:underline' : 'text-[#555] cursor-not-allowed'}`}>
+                                            상세 보기 <ExternalLink size={16} />
+                                        </a>
                                     </div>
                                 </div>
                             ))}
