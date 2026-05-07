@@ -123,13 +123,20 @@ export default function Skill({ scores, onBack, onProfile, bookmarks, onToggleBo
     const { weakPoints, recommendations, quests } = aiData;
 
     const completeQuest = (questId) => {
-        const newQuests = quests.map(q =>
+        let newQuests = quests.map(q =>
             q.id === questId ? { ...q, status: 'done' } : q
         );
+
+        // 잠겨있는 퀘스트 중 첫 번째 항목을 찾아서 'current'로 변경하여 해금
+        const firstLockedIndex = newQuests.findIndex(q => q.status === 'locked');
+        if (firstLockedIndex !== -1) {
+            newQuests[firstLockedIndex] = { ...newQuests[firstLockedIndex], status: 'current' };
+        }
+
         const newAiData = { ...aiData, quests: newQuests };
         setAiData(newAiData);
 
-        const cacheKey = 'reon_skill_ai_data';
+        const cacheKey = 'reon_skill_ai_data_v2';
         const cachedStr = localStorage.getItem(cacheKey);
         if (cachedStr) {
             try {
@@ -346,9 +353,9 @@ export default function Skill({ scores, onBack, onProfile, bookmarks, onToggleBo
                                                                 {q.weeklyGoals.map((g, gi) => (
                                                                     <div key={gi} className="flex items-center gap-3">
                                                                         <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full shrink-0
-                                                                            ${q.status === 'done' ? 'text-[#4F46E5] bg-[#F2F3FB]' : 
-                                                                            q.status === 'locked' ? 'text-[#999] bg-[#F4F4F5]' : 
-                                                                            'text-[#FF5A00] bg-[#FFF5F0]'}`}>
+                                                                            ${q.status === 'done' ? 'text-[#4F46E5] bg-[#F2F3FB]' :
+                                                                                q.status === 'locked' ? 'text-[#999] bg-[#F4F4F5]' :
+                                                                                    'text-[#FF5A00] bg-[#FFF5F0]'}`}>
                                                                             {g.week}
                                                                         </span>
                                                                         <span className={`text-[13px] font-medium ${q.status === 'done' ? 'text-[#666] line-through opacity-70' : q.status === 'locked' ? 'text-[#999]' : 'text-[#333]'}`}>{g.task}</span>
