@@ -67,7 +67,16 @@ export default function App() {
     if (scoreData) {
       // If we are doing a re-search or portfolio update, preserve existing scores
       setScores(prev => {
-        const newScores = prev ? { ...prev, ...scoreData } : scoreData;
+        let newScores = prev ? { ...prev, ...scoreData } : scoreData;
+        
+        // If portfolio analysis provided a new job readiness score, update the categoryScores
+        if (scoreData.jobReadinessScore && newScores.categoryScores) {
+          const newCategoryScores = [...newScores.categoryScores];
+          newCategoryScores[0] = scoreData.jobReadinessScore;
+          newScores.categoryScores = newCategoryScores;
+          newScores.totalScore = newCategoryScores.reduce((a, b) => a + b, 0);
+        }
+        
         localStorage.setItem('reon_survey_scores', JSON.stringify(newScores));
         localStorage.setItem('reon_survey_date', new Date().toISOString());
         return newScores;

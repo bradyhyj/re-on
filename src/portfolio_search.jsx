@@ -1,33 +1,68 @@
 import { useState } from 'react'
-import { ChevronLeft, Check, Upload, FileText, X } from 'lucide-react'
+import { ChevronLeft, Check, Upload, FileText, X, Loader2 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { analyzePortfolioFile } from './gemini'
 
 export default function PortfolioSearch({ onComplete, onBack }) {
     const [portfolioFile, setPortfolioFile] = useState(null)
+    const [isAnalyzing, setIsAnalyzing] = useState(false);
     const color = '#8B5CF6' // Using the Skill track color
     const bgColor = '#F5F3FF'
 
     const handleFileChange = (e) => {
         const file = e.target.files[0];
         if (file) {
-            setPortfolioFile({ name: file.name, size: (file.size / 1024 / 1024).toFixed(2) + 'MB' });
+            setPortfolioFile({ 
+                name: file.name, 
+                size: (file.size / 1024 / 1024).toFixed(2) + 'MB',
+                fileObj: file
+            });
         }
     }
 
-    const handleComplete = () => {
-        // Simulated improvement in skill scores after portfolio upload
-        const simulatedSkillScores = portfolioFile ? [
-            { label: '기술', value: 85 },
-            { label: '경험', value: 75 },
-            { label: '소통', value: 70 },
-            { label: '자격', value: 65 },
-            { label: '직무이해', value: 90 },
-        ] : null;
+    const handleComplete = async () => {
+        if (!portfolioFile?.fileObj) return;
 
-        onComplete({
-            portfolio: portfolioFile,
-            skillScores: simulatedSkillScores
-        })
+        setIsAnalyzing(true);
+        const file = portfolioFile.fileObj;
+        const cacheKeyScore = `reon_portfolio_score_${file.name}`;
+        const cacheKeyFile = `reon_portfolio_${file.name}`;
+
+        try {
+            const reader = new FileReader();
+            reader.onload = async (event) => {
+                const base64Data = event.target.result;
+                
+                // Save file to storage (ignoring quota errors gracefully)
+                try {
+                    localStorage.setItem(cacheKeyFile, base64Data);
+                } catch(e) { 
+                    console.warn('Storage quota exceeded for file, saving score only.'); 
+                }
+
+                // Check for cached score
+                const cachedScore = localStorage.getItem(cacheKeyScore);
+                let aiResult;
+
+                if (cachedScore) {
+                    aiResult = JSON.parse(cachedScore);
+                } else {
+                    aiResult = await analyzePortfolioFile(base64Data, file.type);
+                    localStorage.setItem(cacheKeyScore, JSON.stringify(aiResult));
+                }
+
+                setIsAnalyzing(false);
+                onComplete({
+                    portfolio: portfolioFile,
+                    skillScores: aiResult.skillScores,
+                    jobReadinessScore: aiResult.jobReadinessScore
+                });
+            };
+            reader.readAsDataURL(file);
+        } catch (error) {
+            console.error(error);
+            setIsAnalyzing(false);
+        }
     }
 
     return (
@@ -99,10 +134,18 @@ export default function PortfolioSearch({ onComplete, onBack }) {
             <div className="absolute bottom-0 left-0 w-full bg-white/80 backdrop-blur-xl border-t border-black/[0.04] p-6 pb-safe-offset z-50">
                 <style>{`.pb-safe-offset { padding-bottom: calc(max(env(safe-area-inset-bottom), 24px)); }`}</style>
                 <motion.button
-                    whileTap={{ scale: 0.98 }}
+                    whileTap={{ scale: isAnalyzing ? 1 : 0.98 }}
                     onClick={handleComplete}
-                    className="w-full py-4.5 rounded-[20px] bg-[#4F46E5] text-white text-[16px] font-bold flex justify-center items-center shadow-[0_8px_24px_rgba(79,70,229,0.3)] transition-all">
-                    역량 분석 시작하기
+                    disabled={isAnalyzing || !portfolioFile}
+                    className={`w-full py-4.5 rounded-[20px] text-white text-[16px] font-bold flex justify-center items-center gap-2 shadow-[0_8px_24px_rgba(79,70,229,0.3)] transition-all
+                        ${isAnalyzing || !portfolioFile ? 'bg-[#A5B4FC] cursor-not-allowed' : 'bg-[#4F46E5] hover:bg-[#4338CA]'}`}>
+                    {isAnalyzing ? (
+                        <>
+                            <Loader2 className="animate-spin" size={20} /> AI 분석 중...
+                        </>
+                    ) : (
+                        '역량 분석 시작하기'
+                    )}
                 </motion.button>
             </div>
         </div>

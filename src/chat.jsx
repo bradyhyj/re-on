@@ -47,7 +47,7 @@ export default function Chat({ onBack }) {
     };
 
     return (
-        <div className="flex flex-col h-full w-full bg-[#F8F9FA] text-[#111] overflow-hidden fixed inset-0 z-[200]">
+        <div className="flex flex-col h-full w-full bg-[#F8F9FA] text-[#111] overflow-hidden absolute inset-0 z-[200]">
             {/* Header */}
             <div className="flex items-center justify-between px-4 pt-5 pb-4 bg-white border-b border-[#F0F0F0] shrink-0">
                 <button onClick={onBack} className="p-2 text-[#666] hover:text-[#111] transition-colors">
