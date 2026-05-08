@@ -56,9 +56,7 @@ export default function Mind({ onBack, onProfile, bookmarks, onToggleBookmark, o
             <div className="flex items-center justify-between px-6 pt-5 pb-4 bg-white sticky top-0 z-20 border-b border-[#F0F0F0]">
                 <div className="w-[60px]"></div>
                 <div className="text-[17px] font-bold">심리 회복</div>
-                <button onClick={onBack} className="w-[60px] flex justify-end text-[#666] hover:text-[#111] transition-colors">
-                    <span className="text-[15px] font-bold">뒤로</span>
-                </button>
+                <div className="w-[60px]"></div>
             </div>
 
             {/* 탭 바 */}
