@@ -92,9 +92,7 @@ export default function Information({ scores, onBack, onProfile, bookmarks, onTo
             <div className="flex items-center justify-between px-6 pt-5 pb-4 bg-white sticky top-0 z-20 border-b border-[#F0F0F0]">
                 <div className="w-[60px]"></div>
                 <div className="text-[17px] font-bold">취업 정보</div>
-                <button onClick={onBack} className="w-[60px] flex justify-end text-[#666] hover:text-[#111] transition-colors">
-                    <span className="text-[15px] font-bold">뒤로</span>
-                </button>
+                <div className="w-[60px]"></div>
             </div>
 
             <div className="flex-1 overflow-y-auto pb-24">
