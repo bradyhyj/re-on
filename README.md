@@ -1,16 +1,149 @@
-# React + Vite
+# 다시:ON💡
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+> **쉬어가도 괜찮아요. 다시, 당신의 내일을.**
+> 쉬었음 청년을 위한 AI 맞춤형 통합 지원 플랫폼
 
-Currently, two official plugins are available:
+[![Vercel](https://img.shields.io/badge/Deployed-Vercel-black?logo=vercel)](https://re-on-preview.vercel.app)
+![React](https://img.shields.io/badge/React-18-61DAFB?logo=react)
+![Vite](https://img.shields.io/badge/Vite-latest-646CFF?logo=vite)
+![JavaScript](https://img.shields.io/badge/JavaScript-93%25-F7DF1E?logo=javascript)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+> 경북대학교 사회복지학부 × 더컴퍼니씨협동조합  
+> 대구 지역사회 활성화 공모전 출품작  
+> 팀원: 김고은, 김민우, 황영종
 
-## React Compiler
+---
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## 📌 프로젝트 소개
 
-## Expanding the ESLint configuration
+**다시:ON**은 구직을 포기하고 사각지대에 놓인 쉬었음 청년이 자신의 페이스에 맞춰 다시 사회로 나아갈 수 있도록 돕는 **올인원 지원 플랫폼**입니다.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+당장 완벽한 이력서를 요구하는 기존 채용 포털과 달리, 청년이 겪고 있는 **막연한 불안감과 무기력을 해소하는 것부터 출발합니다.**
+
+2015년부터 2024년까지 대구의 청년 '쉬었음' 인구는 **15.8% 폭증(2.2만 명)** 했습니다. 청년 실업률은 떨어졌지만, 이는 청년들이 구직을 포기하고 비경제활동인구로 이탈했기 때문입니다. 이는 지역 소멸을 가속하는 핵심 요인으로 지목되고 있습니다.
+
+---
+
+## 🔍 핵심 차별점
+
+| | 다시:ON | 기존 채용 포털 |
+|---|---|---|
+| 출발점 | 무기력·불안감 해소 | 스펙·이력서 완성 |
+| 진단 방식 | 다각도 AI 정밀 진단 | 없음 |
+| 지역 특화 | 대구 복지정책·공고 자동 매칭 | 전국 단위 |
+| 심리 지원 | AI 멘탈케어 + 전문 기관 연계 | 없음 |
+
+---
+
+## ✨ 핵심 기능
+
+### ① 맞춤 상황 진단
+
+개인별 설문을 통해 심리 상태, 번아웃 정도, 구직 준비도를 종합 분석합니다. 진단 결과를 **점수와 오각형 그래프**로 직관적으로 시각화하고, 최적 트랙을 자동 추천합니다.
+
+| 결과 유형 | 추천 서비스 |
+|-----------|-------------|
+| 취업 정보 우선형 | 맞춤 취업 공고 추천 · 대구 특화 청년 정책 배달 |
+| 역량 개발 우선형 | AI 포트폴리오 분석 기반 직무 역량 및 커리어 로드맵 |
+| 심리 회복 우선형 | AI 심리 상담사 · 커뮤니티 · 성장 기록 |
+
+### ② 취업 정보 제공
+
+- **맞춤 취업 공고 추천**: 워크넷 연동, 직군·지역·고용형태 조건 기반 필터링, 관심 공고 북마크 및 알림
+- **대구 지역 특화 '청년 정책 배달'**: 대구광역시·정부 복지 혜택(청년수당, 월세 지원, 청년내일저축계좌 등)을 내 상황에 맞게 AI가 자동 매칭 — 일일이 찾지 않아도 권리를 찾아주는 수혜자 중심 서비스
+
+### ③ 역량 개발 서비스
+
+포트폴리오를 업로드하면 AI가 **직무 역량 오각형 그래프**로 현재 상태를 분석하고, 보완할 역량과 단계별 커리어 로드맵을 제시합니다.
+
+- AI 역량 오각형 그래프 — 기술·경험·소통·자격·직무이해 시각화
+- 보강 필요 역량별 맞춤 교육 추천 (무료/유료)
+- 커리어 퀘스트 — 단계별 미션으로 취업 준비 동력 확보
+
+### ④ 심리 회복 케어
+
+- **AI 멘탈케어**: Gemini 연동, 24시간 익명 AI 상담사와 자유로운 감정 표현 및 공감 응답, 취업 준비 조언까지
+- **전문 상담 연계**: AI로 해결이 어려운 경우 대구 청년마음건강지원 등 전문 기관 연결
+- **커뮤니티**: 대구 맞춤 정책 팁·합격 후기·고민 나눔을 통한 정서적 지지
+- **성장 기록**: 이력서 완성도·퀘스트 달성률·정책 활용도·심리 회복 지수를 수치로 시각화, AI가 활동 데이터를 분석해 격려 메시지 제공
+
+---
+
+## 🔁 서비스 흐름
+
+```
+랜딩 페이지 → 맞춤 상황 진단 (11문항) → 종합 진단 점수 + 트랙 자동 추천
+                                                    ↓
+                        [취업 정보] / [역량 개발] / [심리 회복]
+                                                    ↓
+                              마이페이지 (성장 기록 · 북마크 · 커뮤니티)
+```
+
+---
+
+## 🛠️ 기술 스택
+
+| 구분 | 기술 |
+|------|------|
+| Frontend | React 18, JavaScript |
+| Build Tool | Vite |
+| Styling | CSS |
+| AI | Claude API (Anthropic), Gemini |
+| 외부 연동 | 워크넷 API, 고용노동부 API |
+| Deployment | Vercel |
+
+---
+
+## 🚀 시작하기
+
+```bash
+# 레포지토리 클론
+git clone https://github.com/bradyhyj/re-on.git
+cd re-on
+
+# 의존성 설치
+npm install
+
+# 개발 서버 실행
+npm run dev
+
+# 프로덕션 빌드
+npm run build
+```
+
+---
+
+## 🌐 배포
+
+**[https://re-on-preview.vercel.app](https://re-on-preview.vercel.app)**
+
+---
+
+## 📈 기대 효과
+
+### 쉬었음 청년
+- **정서적 고립 해소** — 맞춤형 AI 심리 케어를 통한 무기력감 극복
+- **성취감 회복** — 작은 성공 경험을 누적하여 구직 효능감 상승
+- **맞춤형 방향성 확보** — 정보 비대칭 해소, 단계별 로드맵으로 꾸준한 구직 준비
+
+### 대구 지역 기업
+- **인재 풀 확대** — 취업 시장에 없었던 잠재력 있는 청년 발굴
+- **미스매칭 해소** — 기업 인재상에 적합한 검증된 인재와의 맞춤 매칭
+- **구인난 완화** — 대구 중소·스타트업의 고질적인 구인 어려움 해소
+
+### 대구광역시
+- **비경제활동인구 전환** — 2.2만 명의 쉬었음 청년을 경제활동인구로 전환
+- **복지 예산 효율화** — 데이터 기반 맞춤형 정책 추천으로 예산 실효성 극대화
+- **확장 가능성** — 청년 복지 표준 모델로 타 지자체 확장 가능
+
+---
+
+## 👥 팀
+
+| 이름 | 역할 |
+|------|------|
+| 김고은 |  |
+| 김민우 |  |
+| 황영종 |  |
+
+**경북대학교 사회복지학부 × 더컴퍼니씨협동조합**
