@@ -182,6 +182,21 @@ export default function PortfolioSearch({ onComplete, onBack }) {
                 </motion.button>
             </div>
 
+            {/* Loading Overlay */}
+            <AnimatePresence>
+                {isAnalyzing && (
+                    <div className="absolute inset-0 z-[200] flex items-center justify-center bg-white/80 backdrop-blur-md">
+                        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="flex flex-col items-center bg-white p-8 rounded-[32px] shadow-[0_8px_40px_rgba(0,0,0,0.12)] border border-black/[0.04]">
+                            <Loader2 size={48} className="animate-spin text-[#4F46E5] mb-5" />
+                            <h3 className="text-[18px] font-extrabold text-[#111] mb-2">AI 포트폴리오 분석 중</h3>
+                            <p className="text-[14px] text-[#666] text-center leading-[1.6]">
+                                잠시만 기다려주세요.<br/>서류에서 실무 역량을 추출하고 있습니다.
+                            </p>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
             {/* AI Warning Modal */}
             <AnimatePresence>
                 {showAiWarning && (
