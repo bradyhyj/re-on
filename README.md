@@ -74,9 +74,9 @@
 ```
 랜딩 페이지 → 맞춤 상황 진단 (11문항) → 종합 진단 점수 + 트랙 자동 추천
                                                     ↓
-                        [취업 정보] / [역량 개발] / [심리 회복]
+                                 [취업 정보] / [역량 개발] / [심리 회복]
                                                     ↓
-                              마이페이지 (성장 기록 · 북마크 · 커뮤니티)
+                                마이페이지 (성장 기록 · 북마크 · 커뮤니티)
 ```
 
 ---
@@ -88,8 +88,8 @@
 | Frontend | React 18, JavaScript |
 | Build Tool | Vite |
 | Styling | CSS |
-| AI | Claude API (Anthropic), Gemini |
-| 외부 연동 | 워크넷 API, 고용노동부 API |
+| AI | Gemini 3.1 Flash Lite |
+| 외부 연동 | 온통청년 API |
 | Deployment | Vercel |
 
 ---
