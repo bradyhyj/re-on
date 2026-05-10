@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { Compass, CheckCircle2, Lock, ChevronRight, User, BarChart2, BookOpen, AlertCircle, ExternalLink, Bookmark, Loader2 } from 'lucide-react';
+import { Compass, CheckCircle2, Lock, ChevronRight, User, BarChart2, BookOpen, AlertCircle, ExternalLink, Bookmark, Loader2, FileText, ChevronLeft } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
 // ── 오각형 레이더 차트 ──────────────────────────────────────────
@@ -76,6 +76,7 @@ export default function Skill({ scores, onBack, onProfile, bookmarks, onToggleBo
     const [tab, setTab] = useState('diagnosis'); // 'diagnosis' | 'roadmap'
     const [aiData, setAiData] = useState({ weakPoints: [], recommendations: [], quests: [] });
     const [isAiLoading, setIsAiLoading] = useState(true);
+    const [showUploadPrompt, setShowUploadPrompt] = useState(!scores?.portfolio);
 
     const radarData = (scores && scores.skillScores) ? scores.skillScores : [
         { label: '기술', value: 55 },
@@ -85,10 +86,17 @@ export default function Skill({ scores, onBack, onProfile, bookmarks, onToggleBo
         { label: '직무이해', value: 60 },
     ];
 
+    let portfolioStatus = 'valid';
+    if (!scores?.portfolio) {
+        portfolioStatus = 'none';
+    } else if (scores?.isValidPortfolio === false) {
+        portfolioStatus = 'invalid';
+    }
+
     useEffect(() => {
         const fetchAiData = async () => {
             const cacheKey = 'reon_skill_ai_data_v2';
-            const cacheHash = JSON.stringify(radarData);
+            const cacheHash = JSON.stringify({ radarData, portfolioStatus });
 
             const cachedStr = localStorage.getItem(cacheKey);
             if (cachedStr) {
@@ -107,7 +115,7 @@ export default function Skill({ scores, onBack, onProfile, bookmarks, onToggleBo
             setIsAiLoading(true);
             try {
                 const { generateSkillRecommendations } = await import('./gemini');
-                const result = await generateSkillRecommendations(radarData, scores?.careerFields);
+                const result = await generateSkillRecommendations(radarData, scores?.careerFields, portfolioStatus);
                 setAiData(result);
                 localStorage.setItem(cacheKey, JSON.stringify({ hash: cacheHash, data: result }));
             } catch (err) {
@@ -148,6 +156,55 @@ export default function Skill({ scores, onBack, onProfile, bookmarks, onToggleBo
             }
         }
     };
+
+    if (showUploadPrompt || portfolioStatus === 'invalid') {
+        const isInvalid = portfolioStatus === 'invalid';
+        return (
+            <div className="flex flex-col h-full w-full bg-[#F8F9FA] text-[#111] overflow-hidden">
+                <div className="flex items-center justify-between px-6 pt-5 pb-4 bg-white sticky top-0 z-20 border-b border-[#F0F0F0]">
+                    <button onClick={onBack} className="flex items-center gap-1 text-[#666] hover:text-[#111] transition-colors font-medium -ml-2">
+                        <ChevronLeft size={22} />
+                        <span>이전</span>
+                    </button>
+                    <div className="text-[17px] font-bold">역량 개발</div>
+                    <div className="w-[60px]"></div>
+                </div>
+
+                <div className="flex-1 flex flex-col items-center justify-center px-6 pb-20 text-center">
+                    <div className={`w-20 h-20 bg-white rounded-full flex items-center justify-center shadow-[0_4px_20px_rgba(0,0,0,0.05)] mb-6 border border-black/[0.02] ${isInvalid ? 'text-[#FF5A00]' : 'text-[#4F46E5]'}`}>
+                        {isInvalid ? <AlertCircle size={36} /> : <FileText size={36} />}
+                    </div>
+                    
+                    {isInvalid ? (
+                        <>
+                            <h2 className="text-[22px] font-extrabold mb-3 leading-[1.4] break-keep tracking-tight text-[#111]">
+                                올바르지 않은 포트폴리오 PDF<br/>
+                                파일을 업로드하였습니다.
+                            </h2>
+                            <p className="text-[15px] text-[#666] font-medium mb-12">다시 업로드하여 주십시오.</p>
+                        </>
+                    ) : (
+                        <>
+                            <h2 className="text-[22px] font-extrabold mb-3 leading-[1.4] break-keep tracking-tight text-[#111]">
+                                포트폴리오를 업로드 해야<br/>
+                                역량 트랙을 확인할 수 있어요!
+                            </h2>
+                            <p className="text-[15px] text-[#666] font-medium mb-12">업로드하시겠어요?</p>
+                        </>
+                    )}
+
+                    <div className="w-full flex flex-col gap-3 max-w-[280px]">
+                        <motion.button whileTap={{ scale: 0.98 }} onClick={onStartPortfolioSearch} className="w-full py-4 rounded-[16px] bg-[#4F46E5] text-white font-bold text-[16px] shadow-[0_8px_24px_rgba(79,70,229,0.3)] hover:bg-[#4338CA] transition-colors">
+                            {isInvalid ? '다시 업로드할게요' : '업로드할게요'}
+                        </motion.button>
+                        <motion.button whileTap={{ scale: 0.98 }} onClick={onBack} className="w-full py-4 rounded-[16px] bg-white border border-[#E5E7EB] text-[#666] font-bold text-[16px] hover:bg-[#F8F9FA] transition-colors shadow-sm">
+                            {isInvalid ? '이전으로' : '나중에 할게요'}
+                        </motion.button>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="flex flex-col h-full w-full bg-[#F8F9FA] text-[#111] overflow-hidden">
@@ -228,6 +285,7 @@ export default function Skill({ scores, onBack, onProfile, bookmarks, onToggleBo
                                         <AlertCircle size={16} className="text-[#FF5A00]" />
                                         <h2 className="text-[16px] font-bold">보강이 필요한 역량</h2>
                                     </div>
+
                                     <div className="flex flex-col gap-2.5">
                                         {isAiLoading ? (
                                             <div className="bg-white p-8 rounded-[16px] flex flex-col items-center justify-center shadow-[0_2px_8px_rgba(0,0,0,0.03)] border border-[#E5E7EB] border-dashed">

@@ -2,10 +2,12 @@ import { useState } from 'react'
 import { ChevronLeft, Check, Upload, FileText, X, Loader2 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { analyzePortfolioFile } from './gemini'
+import demoPdfUrl from './assets/Fortpolio_for_Testing_Service.pdf'
 
 export default function PortfolioSearch({ onComplete, onBack }) {
     const [portfolioFile, setPortfolioFile] = useState(null)
     const [isAnalyzing, setIsAnalyzing] = useState(false);
+    const [showAiWarning, setShowAiWarning] = useState(false);
     const color = '#8B5CF6' // Using the Skill track color
     const bgColor = '#F5F3FF'
 
@@ -20,9 +22,29 @@ export default function PortfolioSearch({ onComplete, onBack }) {
         }
     }
 
+    const handleUseDemoPdf = async () => {
+        try {
+            const response = await fetch(demoPdfUrl);
+            const blob = await response.blob();
+            const file = new File([blob], 'Fortpolio_for_Testing_Service.pdf', { type: 'application/pdf' });
+            setPortfolioFile({ 
+                name: file.name, 
+                size: (file.size / 1024 / 1024).toFixed(2) + 'MB',
+                fileObj: file
+            });
+        } catch (error) {
+            console.error("Demo PDF load error:", error);
+        }
+    }
+
     const handleComplete = async () => {
         if (!portfolioFile?.fileObj) return;
 
+        setShowAiWarning(true);
+    }
+
+    const proceedAnalysis = async () => {
+        setShowAiWarning(false);
         setIsAnalyzing(true);
         const file = portfolioFile.fileObj;
         const cacheKeyScore = `reon_portfolio_score_${file.name}`;
@@ -55,7 +77,8 @@ export default function PortfolioSearch({ onComplete, onBack }) {
                 onComplete({
                     portfolio: portfolioFile,
                     skillScores: aiResult.skillScores,
-                    jobReadinessScore: aiResult.jobReadinessScore
+                    jobReadinessScore: aiResult.jobReadinessScore,
+                    isValidPortfolio: aiResult.isValidPortfolio
                 });
             };
             reader.readAsDataURL(file);
@@ -100,31 +123,41 @@ export default function PortfolioSearch({ onComplete, onBack }) {
 
                     <div className="flex flex-col gap-4">
                         {portfolioFile ? (
-                            <div className="bg-white p-6 rounded-[24px] border-2 border-dashed border-[#16A34A] flex items-center justify-between shadow-md">
-                                <div className="flex items-center gap-4">
-                                    <div className="w-12 h-12 rounded-xl bg-[#F0FDF4] text-[#16A34A] flex items-center justify-center">
+                            <div className="bg-white p-6 rounded-[24px] border-2 border-dashed border-[#16A34A] flex items-center justify-between shadow-md overflow-hidden">
+                                <div className="flex items-center gap-4 min-w-0">
+                                    <div className="w-12 h-12 rounded-xl bg-[#F0FDF4] text-[#16A34A] flex items-center justify-center shrink-0">
                                         <FileText size={24} />
                                     </div>
-                                    <div>
-                                        <div className="text-[15px] font-bold text-[#111] line-clamp-1">{portfolioFile.name}</div>
+                                    <div className="min-w-0">
+                                        <div className="text-[15px] font-bold text-[#111] truncate">{portfolioFile.name}</div>
                                         <div className="text-[12px] text-[#999]">{portfolioFile.size}</div>
                                     </div>
                                 </div>
-                                <button onClick={() => setPortfolioFile(null)} className="p-2 text-[#999] hover:text-red-500 transition-colors">
+                                <button onClick={() => setPortfolioFile(null)} className="p-2 text-[#999] hover:text-red-500 transition-colors shrink-0 ml-2">
                                     <X size={24} />
                                 </button>
                             </div>
                         ) : (
-                            <label className="cursor-pointer">
-                                <input type="file" className="hidden" accept=".pdf,.doc,.docx" onChange={handleFileChange} />
-                                <div className="bg-white p-16 rounded-[32px] border-2 border-dashed border-[#E5E7EB] flex flex-col items-center justify-center gap-4 hover:border-[#8B5CF6] hover:bg-[#F5F3FF]/30 transition-all group shadow-sm">
-                                    <div className="w-16 h-16 rounded-full bg-[#F8F9FA] text-[#CCC] flex items-center justify-center group-hover:text-[#8B5CF6] group-hover:bg-white transition-all shadow-sm">
-                                        <Upload size={28} />
+                            <div className="flex flex-col gap-2">
+                                <label className="cursor-pointer">
+                                    <input type="file" className="hidden" accept=".pdf,.doc,.docx" onChange={handleFileChange} />
+                                    <div className="bg-white p-16 rounded-[32px] border-2 border-dashed border-[#E5E7EB] flex flex-col items-center justify-center gap-4 hover:border-[#8B5CF6] hover:bg-[#F5F3FF]/30 transition-all group shadow-sm">
+                                        <div className="w-16 h-16 rounded-full bg-[#F8F9FA] text-[#CCC] flex items-center justify-center group-hover:text-[#8B5CF6] group-hover:bg-white transition-all shadow-sm">
+                                            <Upload size={28} />
+                                        </div>
+                                        <div className="text-[16px] font-bold text-[#999] group-hover:text-[#8B5CF6]">여기를 눌러 파일 업로드</div>
+                                        <div className="text-[12px] text-[#BBB]">PDF, Word 파일 (최대 10MB)</div>
                                     </div>
-                                    <div className="text-[16px] font-bold text-[#999] group-hover:text-[#8B5CF6]">여기를 눌러 파일 업로드</div>
-                                    <div className="text-[12px] text-[#BBB]">PDF, Word 파일 (최대 10MB)</div>
+                                </label>
+                                <div className="flex gap-2 mt-2">
+                                    <button onClick={handleUseDemoPdf} className="flex-1 py-4 bg-white border border-[#E5E7EB] rounded-[20px] text-[#333] text-[14px] font-bold shadow-sm hover:bg-[#F8F9FA] transition-colors">
+                                        시연용 PDF 사용
+                                    </button>
+                                    <a href={demoPdfUrl} download="Fortpolio_for_Testing_Service.pdf" className="flex-1 py-4 bg-[#F4F4F5] rounded-[20px] text-[#666] text-[14px] font-bold text-center hover:bg-[#E4E4E7] transition-colors">
+                                        시연용 PDF 다운로드
+                                    </a>
                                 </div>
-                            </label>
+                            </div>
                         )}
                     </div>
                 </motion.div>
@@ -148,6 +181,32 @@ export default function PortfolioSearch({ onComplete, onBack }) {
                     )}
                 </motion.button>
             </div>
+
+            {/* AI Warning Modal */}
+            <AnimatePresence>
+                {showAiWarning && (
+                    <div className="absolute inset-0 z-[100] flex items-center justify-center p-6">
+                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowAiWarning(false)} />
+                        <motion.div initial={{ opacity: 0, scale: 0.95, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 10 }} className="relative bg-white rounded-[24px] w-full max-w-[320px] p-6 shadow-2xl overflow-hidden">
+                            <div className="w-12 h-12 rounded-full bg-[#FFF5F0] text-[#FF5A00] flex items-center justify-center mb-4">
+                                <FileText size={24} />
+                            </div>
+                            <h3 className="text-[18px] font-extrabold mb-2 text-[#111]">AI 학습 이용 동의</h3>
+                            <p className="text-[14px] text-[#666] leading-[1.6] mb-6 break-keep">
+                                업로드하신 포트폴리오(이력서) 파일은 더 정교한 분석과 맞춤형 서비스 제공을 위해 <span className="font-bold text-[#111]">AI 학습 데이터로 활용</span>될 수 있습니다.<br/><br/>동의하시겠습니까?
+                            </p>
+                            <div className="flex gap-2 w-full">
+                                <button onClick={() => setShowAiWarning(false)} className="flex-1 py-3.5 bg-[#F4F4F5] text-[#666] rounded-[16px] font-bold text-[14px] hover:bg-[#E4E4E7] transition-colors">
+                                    취소
+                                </button>
+                                <button onClick={proceedAnalysis} className="flex-[1.5] py-3.5 bg-[#4F46E5] text-white rounded-[16px] font-bold text-[14px] shadow-md hover:bg-[#4338CA] transition-colors">
+                                    동의하고 계속
+                                </button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
         </div>
     )
 }
