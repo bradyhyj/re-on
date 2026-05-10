@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { ChevronLeft, Check, Upload, FileText, X, Loader2 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { analyzePortfolioFile } from './gemini'
+import demoPdfUrl from './assets/Fortpolio_for_Testing_Service.pdf'
 
 export default function PortfolioSearch({ onComplete, onBack }) {
     const [portfolioFile, setPortfolioFile] = useState(null)
@@ -17,6 +18,21 @@ export default function PortfolioSearch({ onComplete, onBack }) {
                 size: (file.size / 1024 / 1024).toFixed(2) + 'MB',
                 fileObj: file
             });
+        }
+    }
+
+    const handleUseDemoPdf = async () => {
+        try {
+            const response = await fetch(demoPdfUrl);
+            const blob = await response.blob();
+            const file = new File([blob], 'Fortpolio_for_Testing_Service.pdf', { type: 'application/pdf' });
+            setPortfolioFile({ 
+                name: file.name, 
+                size: (file.size / 1024 / 1024).toFixed(2) + 'MB',
+                fileObj: file
+            });
+        } catch (error) {
+            console.error("Demo PDF load error:", error);
         }
     }
 
@@ -55,7 +71,8 @@ export default function PortfolioSearch({ onComplete, onBack }) {
                 onComplete({
                     portfolio: portfolioFile,
                     skillScores: aiResult.skillScores,
-                    jobReadinessScore: aiResult.jobReadinessScore
+                    jobReadinessScore: aiResult.jobReadinessScore,
+                    isValidPortfolio: aiResult.isValidPortfolio
                 });
             };
             reader.readAsDataURL(file);
@@ -115,16 +132,26 @@ export default function PortfolioSearch({ onComplete, onBack }) {
                                 </button>
                             </div>
                         ) : (
-                            <label className="cursor-pointer">
-                                <input type="file" className="hidden" accept=".pdf,.doc,.docx" onChange={handleFileChange} />
-                                <div className="bg-white p-16 rounded-[32px] border-2 border-dashed border-[#E5E7EB] flex flex-col items-center justify-center gap-4 hover:border-[#8B5CF6] hover:bg-[#F5F3FF]/30 transition-all group shadow-sm">
-                                    <div className="w-16 h-16 rounded-full bg-[#F8F9FA] text-[#CCC] flex items-center justify-center group-hover:text-[#8B5CF6] group-hover:bg-white transition-all shadow-sm">
-                                        <Upload size={28} />
+                            <div className="flex flex-col gap-2">
+                                <label className="cursor-pointer">
+                                    <input type="file" className="hidden" accept=".pdf,.doc,.docx" onChange={handleFileChange} />
+                                    <div className="bg-white p-16 rounded-[32px] border-2 border-dashed border-[#E5E7EB] flex flex-col items-center justify-center gap-4 hover:border-[#8B5CF6] hover:bg-[#F5F3FF]/30 transition-all group shadow-sm">
+                                        <div className="w-16 h-16 rounded-full bg-[#F8F9FA] text-[#CCC] flex items-center justify-center group-hover:text-[#8B5CF6] group-hover:bg-white transition-all shadow-sm">
+                                            <Upload size={28} />
+                                        </div>
+                                        <div className="text-[16px] font-bold text-[#999] group-hover:text-[#8B5CF6]">여기를 눌러 파일 업로드</div>
+                                        <div className="text-[12px] text-[#BBB]">PDF, Word 파일 (최대 10MB)</div>
                                     </div>
-                                    <div className="text-[16px] font-bold text-[#999] group-hover:text-[#8B5CF6]">여기를 눌러 파일 업로드</div>
-                                    <div className="text-[12px] text-[#BBB]">PDF, Word 파일 (최대 10MB)</div>
+                                </label>
+                                <div className="flex gap-2 mt-2">
+                                    <button onClick={handleUseDemoPdf} className="flex-1 py-4 bg-white border border-[#E5E7EB] rounded-[20px] text-[#333] text-[14px] font-bold shadow-sm hover:bg-[#F8F9FA] transition-colors">
+                                        시연용 PDF 사용
+                                    </button>
+                                    <a href={demoPdfUrl} download="Fortpolio_for_Testing_Service.pdf" className="flex-1 py-4 bg-[#F4F4F5] rounded-[20px] text-[#666] text-[14px] font-bold text-center hover:bg-[#E4E4E7] transition-colors">
+                                        시연용 PDF 다운로드
+                                    </a>
                                 </div>
-                            </label>
+                            </div>
                         )}
                     </div>
                 </motion.div>

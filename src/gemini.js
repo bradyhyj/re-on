@@ -57,8 +57,10 @@ export const analyzePortfolioFile = async (base64Data, mimeType) => {
         const model = genAI.getGenerativeModel({
             model: "gemini-3.1-flash-lite-preview",
             systemInstruction: `당신은 IT/취업 전문 AI 컨설턴트입니다. 사용자의 포트폴리오/이력서를 분석하여 구직 준비도 및 세부 실무 역량을 수치화하세요.
+만약 첨부된 파일이 포트폴리오나 이력서와 무관한 내용이라면 isValidPortfolio를 false로 설정하세요. 그 외에는 true로 설정하세요.
 반드시 아래 JSON 형식으로만 응답해야 합니다. 마크다운 백틱(\`\`\`) 없이 순수 JSON 문자열만 반환하세요.
 {
+  "isValidPortfolio": true, // 포트폴리오 관련 문서가 아니면 false
   "jobReadinessScore": 8, // 1~9점 사이의 정수 (전반적인 구직 준비도)
   "skillScores": [
     { "label": "기술", "value": 85 },
@@ -95,6 +97,7 @@ export const analyzePortfolioFile = async (base64Data, mimeType) => {
         console.error("Gemini API Error (Portfolio):", error);
         // Fallback simulated data on error
         return {
+            isValidPortfolio: false,
             jobReadinessScore: 7,
             skillScores: [
                 { label: '기술', value: 70 },
@@ -107,7 +110,7 @@ export const analyzePortfolioFile = async (base64Data, mimeType) => {
     }
 };
 
-export const generateSkillRecommendations = async (radarData, careerFields) => {
+export const generateSkillRecommendations = async (radarData, careerFields, portfolioStatus = 'valid') => {
     try {
         const model = genAI.getGenerativeModel({
             model: "gemini-3.1-flash-lite-preview",
@@ -135,10 +138,16 @@ export const generateSkillRecommendations = async (radarData, careerFields) => {
 }`,
         });
 
+        const statusMsg = portfolioStatus === 'invalid' ? '사용자가 올바르지 않은 포트폴리오를 업로드했습니다. 사용자의 현재 역량 수치는 임의로 부여된 것입니다. 선택한 지망 직무의 일반적이고 표준적인 로드맵과 보강해야 할 역량을 제시해주세요.' 
+            : portfolioStatus === 'none' ? '사용자가 포트폴리오를 업로드하지 않았습니다. 사용자의 현재 역량 수치는 임의로 부여된 것입니다. 선택한 지망 직무의 일반적이고 표준적인 로드맵과 보강해야 할 역량을 제시해주세요.'
+            : '사용자가 유효한 포트폴리오를 업로드했습니다. 분석된 사용자의 역량 수치를 바탕으로 맞춤형 보강 역량과 로드맵을 제시해주세요.';
+
         const prompt = `
 사용자 지망 직무: ${careerFields?.join(', ') || '미설정'}
 사용자 현재 역량 수치 (0~100점):
 ${radarData.map(d => `${d.label}: ${d.value}점`).join('\n')}
+
+참고사항: ${statusMsg}
 
 위 데이터를 바탕으로 가장 점수가 낮은 역량을 중심으로 분석하여 보강이 필요한 점, 맞춤 교육 로드맵, 그리고 당장 실천할 수 있는 퀘스트 현황을 JSON으로 만들어주세요.`;
         

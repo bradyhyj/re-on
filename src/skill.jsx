@@ -85,10 +85,17 @@ export default function Skill({ scores, onBack, onProfile, bookmarks, onToggleBo
         { label: '직무이해', value: 60 },
     ];
 
+    let portfolioStatus = 'valid';
+    if (!scores?.portfolio) {
+        portfolioStatus = 'none';
+    } else if (scores?.isValidPortfolio === false) {
+        portfolioStatus = 'invalid';
+    }
+
     useEffect(() => {
         const fetchAiData = async () => {
             const cacheKey = 'reon_skill_ai_data_v2';
-            const cacheHash = JSON.stringify(radarData);
+            const cacheHash = JSON.stringify({ radarData, portfolioStatus });
 
             const cachedStr = localStorage.getItem(cacheKey);
             if (cachedStr) {
@@ -107,7 +114,7 @@ export default function Skill({ scores, onBack, onProfile, bookmarks, onToggleBo
             setIsAiLoading(true);
             try {
                 const { generateSkillRecommendations } = await import('./gemini');
-                const result = await generateSkillRecommendations(radarData, scores?.careerFields);
+                const result = await generateSkillRecommendations(radarData, scores?.careerFields, portfolioStatus);
                 setAiData(result);
                 localStorage.setItem(cacheKey, JSON.stringify({ hash: cacheHash, data: result }));
             } catch (err) {
@@ -228,6 +235,20 @@ export default function Skill({ scores, onBack, onProfile, bookmarks, onToggleBo
                                         <AlertCircle size={16} className="text-[#FF5A00]" />
                                         <h2 className="text-[16px] font-bold">보강이 필요한 역량</h2>
                                     </div>
+
+                                    {portfolioStatus === 'none' && (
+                                        <div className="bg-[#FFF5F0] text-[#FF5A00] p-4 rounded-[12px] text-[13px] font-bold mb-4 flex items-start gap-2">
+                                            <AlertCircle size={16} className="shrink-0 mt-0.5" />
+                                            <p>포트폴리오 PDF 파일을 업로드 하지 않았습니다.<br />선택하신 분야의 일반적으로 요구되는 역량을 제시합니다.</p>
+                                        </div>
+                                    )}
+                                    {portfolioStatus === 'invalid' && (
+                                        <div className="bg-[#FFF5F0] text-[#FF5A00] p-4 rounded-[12px] text-[13px] font-bold mb-4 flex items-start gap-2">
+                                            <AlertCircle size={16} className="shrink-0 mt-0.5" />
+                                            <p>올바르지 않은 포트폴리오 PDF 파일을 업로드하였습니다.<br />선택하신 분야의 일반적으로 요구되는 역량을 제시합니다.</p>
+                                        </div>
+                                    )}
+
                                     <div className="flex flex-col gap-2.5">
                                         {isAiLoading ? (
                                             <div className="bg-white p-8 rounded-[16px] flex flex-col items-center justify-center shadow-[0_2px_8px_rgba(0,0,0,0.03)] border border-[#E5E7EB] border-dashed">

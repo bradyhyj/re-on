@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
 import { Briefcase, Sprout, ClipboardList, ChevronLeft, Check, Target, Upload, FileText, X } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { analyzePortfolioFile } from './gemini'
+import demoPdfUrl from './assets/Fortpolio_for_Testing_Service.pdf'
 
 const QUESTIONS = [
     // [구직 준비도]
@@ -38,6 +40,22 @@ export default function Search({ onComplete, onBack }) {
     // New states
     const [selectedFields, setSelectedFields] = useState([])
     const [portfolioFile, setPortfolioFile] = useState(null)
+    const [isAnalyzing, setIsAnalyzing] = useState(false)
+
+    const handleUseDemoPdf = async () => {
+        try {
+            const response = await fetch(demoPdfUrl);
+            const blob = await response.blob();
+            const file = new File([blob], 'Fortpolio_for_Testing_Service.pdf', { type: 'application/pdf' });
+            setPortfolioFile({ 
+                name: file.name, 
+                size: (file.size / 1024 / 1024).toFixed(2) + 'MB',
+                fileObj: file
+            });
+        } catch (error) {
+            console.error("Demo PDF load error:", error);
+        }
+    }
 
     const isCustomStep = current >= QUESTIONS.length
     const q = isCustomStep ? null : QUESTIONS[current]
@@ -61,7 +79,11 @@ export default function Search({ onComplete, onBack }) {
     const handleFileChange = (e) => {
         const file = e.target.files[0];
         if (file) {
-            setPortfolioFile({ name: file.name, size: (file.size / 1024 / 1024).toFixed(2) + 'MB' });
+            setPortfolioFile({ 
+                name: file.name, 
+                size: (file.size / 1024 / 1024).toFixed(2) + 'MB',
+                fileObj: file
+            });
         }
     }
 
@@ -79,12 +101,36 @@ export default function Search({ onComplete, onBack }) {
                 total += score
             })
 
-            onComplete({
-                totalScore: total,
-                categoryScores: catScores,
-                careerFields: selectedFields,
-                portfolio: portfolioFile
-            })
+            const finish = (skillScores = null, jobReadinessScore = null, isValidPortfolio = null) => {
+                onComplete({
+                    totalScore: total,
+                    categoryScores: catScores,
+                    careerFields: selectedFields,
+                    portfolio: portfolioFile ? { name: portfolioFile.name } : null,
+                    skillScores: skillScores,
+                    jobReadinessScore: jobReadinessScore,
+                    isValidPortfolio: isValidPortfolio
+                })
+            }
+
+            if (portfolioFile?.fileObj) {
+                setIsAnalyzing(true);
+                const file = portfolioFile.fileObj;
+                const reader = new FileReader();
+                reader.onload = async (event) => {
+                    const base64Data = event.target.result;
+                    const aiResult = await analyzePortfolioFile(base64Data, file.type);
+                    setIsAnalyzing(false);
+                    finish(aiResult.skillScores, aiResult.jobReadinessScore, aiResult.isValidPortfolio);
+                };
+                reader.onerror = () => {
+                    setIsAnalyzing(false);
+                    finish();
+                };
+                reader.readAsDataURL(file);
+            } else {
+                finish();
+            }
         } else {
             if (!isCustomStep) {
                 setAnswers(prev => ({ ...prev, [q.id]: selected }));
@@ -207,16 +253,26 @@ export default function Search({ onComplete, onBack }) {
                                             </button>
                                         </div>
                                     ) : (
-                                        <label className="cursor-pointer">
-                                            <input type="file" className="hidden" accept=".pdf,.doc,.docx" onChange={handleFileChange} />
-                                            <div className="bg-white p-10 rounded-[24px] border-2 border-dashed border-[#E5E7EB] flex flex-col items-center justify-center gap-3 hover:border-[#16A34A] hover:bg-[#F0FDF4]/30 transition-all group">
-                                                <div className="w-14 h-14 rounded-full bg-[#F8F9FA] text-[#CCC] flex items-center justify-center group-hover:text-[#16A34A] group-hover:bg-white transition-all shadow-sm">
-                                                    <Upload size={24} />
+                                        <div className="flex flex-col gap-2">
+                                            <label className="cursor-pointer">
+                                                <input type="file" className="hidden" accept=".pdf,.doc,.docx" onChange={handleFileChange} />
+                                                <div className="bg-white p-10 rounded-[24px] border-2 border-dashed border-[#E5E7EB] flex flex-col items-center justify-center gap-3 hover:border-[#16A34A] hover:bg-[#F0FDF4]/30 transition-all group">
+                                                    <div className="w-14 h-14 rounded-full bg-[#F8F9FA] text-[#CCC] flex items-center justify-center group-hover:text-[#16A34A] group-hover:bg-white transition-all shadow-sm">
+                                                        <Upload size={24} />
+                                                    </div>
+                                                    <div className="text-[14px] font-bold text-[#999] group-hover:text-[#16A34A]">여기를 눌러 파일 업로드</div>
+                                                    <div className="text-[11px] text-[#BBB]">최대 10MB · PDF, Word</div>
                                                 </div>
-                                                <div className="text-[14px] font-bold text-[#999] group-hover:text-[#16A34A]">여기를 눌러 파일 업로드</div>
-                                                <div className="text-[11px] text-[#BBB]">최대 10MB · PDF, Word</div>
+                                            </label>
+                                            <div className="flex gap-2 mt-2">
+                                                <button onClick={handleUseDemoPdf} className="flex-1 py-3 bg-white border border-[#E5E7EB] rounded-[16px] text-[#333] text-[13px] font-bold shadow-sm hover:bg-[#F8F9FA] transition-colors">
+                                                    시연용 PDF 사용
+                                                </button>
+                                                <a href={demoPdfUrl} download="Fortpolio_for_Testing_Service.pdf" className="flex-1 py-3 bg-[#F4F4F5] rounded-[16px] text-[#666] text-[13px] font-bold text-center hover:bg-[#E4E4E7] transition-colors">
+                                                    시연용 PDF 다운로드
+                                                </a>
                                             </div>
-                                        </label>
+                                        </div>
                                     )}
 
 
@@ -233,10 +289,10 @@ export default function Search({ onComplete, onBack }) {
                 <motion.button
                     whileTap={(isCustomStep || selected !== null) ? { scale: 0.98 } : {}}
                     onClick={handleNext}
-                    disabled={!isCustomStep && selected === null}
+                    disabled={(!isCustomStep && selected === null) || isAnalyzing}
                     className={`w-full py-4 rounded-[16px] text-[16px] font-bold flex justify-center items-center transition-all duration-300 ${(isCustomStep || selected !== null) ? 'text-white' : 'bg-[#E5E7EB] text-[#A1A1AA] cursor-not-allowed'}`}
                     style={{ backgroundColor: (isCustomStep || selected !== null) ? color : undefined, boxShadow: (isCustomStep || selected !== null) ? `0 8px 24px ${color}40` : undefined }}>
-                    {current === totalSteps - 1 ? '진단 완료 · 결과 보기' : '다음 단계로'}
+                    {isAnalyzing ? 'AI 분석 중...' : current === totalSteps - 1 ? '진단 완료 · 결과 보기' : '다음 단계로'}
                 </motion.button>
             </div>
         </div>
