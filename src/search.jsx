@@ -41,6 +41,7 @@ export default function Search({ onComplete, onBack }) {
     const [selectedFields, setSelectedFields] = useState([])
     const [portfolioFile, setPortfolioFile] = useState(null)
     const [isAnalyzing, setIsAnalyzing] = useState(false)
+    const [showAiWarning, setShowAiWarning] = useState(false)
 
     const handleUseDemoPdf = async () => {
         try {
@@ -114,20 +115,7 @@ export default function Search({ onComplete, onBack }) {
             }
 
             if (portfolioFile?.fileObj) {
-                setIsAnalyzing(true);
-                const file = portfolioFile.fileObj;
-                const reader = new FileReader();
-                reader.onload = async (event) => {
-                    const base64Data = event.target.result;
-                    const aiResult = await analyzePortfolioFile(base64Data, file.type);
-                    setIsAnalyzing(false);
-                    finish(aiResult.skillScores, aiResult.jobReadinessScore, aiResult.isValidPortfolio);
-                };
-                reader.onerror = () => {
-                    setIsAnalyzing(false);
-                    finish();
-                };
-                reader.readAsDataURL(file);
+                setShowAiWarning(true);
             } else {
                 finish();
             }
@@ -138,6 +126,45 @@ export default function Search({ onComplete, onBack }) {
             setDirection(1)
             setCurrent(c => c + 1)
         }
+    }
+
+    const proceedNext = () => {
+        setShowAiWarning(false);
+        setIsAnalyzing(true);
+        const file = portfolioFile.fileObj;
+        const reader = new FileReader();
+        
+        const catScores = [0, 0, 0]
+        let total = 0
+        QUESTIONS.forEach((question) => {
+            const score = 3 - (answers[question.id] ?? (question.id === QUESTIONS.length ? selected : 2))
+            catScores[question.catIdx] += score
+            total += score
+        })
+
+        const finish = (skillScores = null, jobReadinessScore = null, isValidPortfolio = null) => {
+            onComplete({
+                totalScore: total,
+                categoryScores: catScores,
+                careerFields: selectedFields,
+                portfolio: portfolioFile ? { name: portfolioFile.name } : null,
+                skillScores: skillScores,
+                jobReadinessScore: jobReadinessScore,
+                isValidPortfolio: isValidPortfolio
+            })
+        }
+
+        reader.onload = async (event) => {
+            const base64Data = event.target.result;
+            const aiResult = await analyzePortfolioFile(base64Data, file.type);
+            setIsAnalyzing(false);
+            finish(aiResult.skillScores, aiResult.jobReadinessScore, aiResult.isValidPortfolio);
+        };
+        reader.onerror = () => {
+            setIsAnalyzing(false);
+            finish();
+        };
+        reader.readAsDataURL(file);
     }
 
     const handlePrev = () => {
@@ -238,17 +265,17 @@ export default function Search({ onComplete, onBack }) {
 
                                 <div className="flex flex-col gap-4">
                                     {portfolioFile ? (
-                                        <div className="bg-white p-5 rounded-[20px] border-2 border-dashed border-[#16A34A] flex items-center justify-between shadow-sm">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-10 h-10 rounded-lg bg-[#F0FDF4] text-[#16A34A] flex items-center justify-center">
+                                        <div className="bg-white p-5 rounded-[20px] border-2 border-dashed border-[#16A34A] flex items-center justify-between shadow-sm overflow-hidden">
+                                            <div className="flex items-center gap-3 min-w-0">
+                                                <div className="w-10 h-10 rounded-lg bg-[#F0FDF4] text-[#16A34A] flex items-center justify-center shrink-0">
                                                     <FileText size={20} />
                                                 </div>
-                                                <div>
-                                                    <div className="text-[14px] font-bold text-[#111] line-clamp-1">{portfolioFile.name}</div>
+                                                <div className="min-w-0">
+                                                    <div className="text-[14px] font-bold text-[#111] truncate">{portfolioFile.name}</div>
                                                     <div className="text-[11px] text-[#999]">{portfolioFile.size}</div>
                                                 </div>
                                             </div>
-                                            <button onClick={() => setPortfolioFile(null)} className="text-[#999] hover:text-red-500 transition-colors">
+                                            <button onClick={() => setPortfolioFile(null)} className="text-[#999] hover:text-red-500 transition-colors shrink-0 ml-2">
                                                 <X size={20} />
                                             </button>
                                         </div>
@@ -295,6 +322,32 @@ export default function Search({ onComplete, onBack }) {
                     {isAnalyzing ? 'AI 분석 중...' : current === totalSteps - 1 ? '진단 완료 · 결과 보기' : '다음 단계로'}
                 </motion.button>
             </div>
+
+            {/* AI Warning Modal */}
+            <AnimatePresence>
+                {showAiWarning && (
+                    <div className="absolute inset-0 z-[100] flex items-center justify-center p-6">
+                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowAiWarning(false)} />
+                        <motion.div initial={{ opacity: 0, scale: 0.95, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 10 }} className="relative bg-white rounded-[24px] w-full max-w-[320px] p-6 shadow-2xl overflow-hidden">
+                            <div className="w-12 h-12 rounded-full bg-[#FFF5F0] text-[#FF5A00] flex items-center justify-center mb-4">
+                                <FileText size={24} />
+                            </div>
+                            <h3 className="text-[18px] font-extrabold mb-2 text-[#111]">AI 학습 이용 동의</h3>
+                            <p className="text-[14px] text-[#666] leading-[1.6] mb-6 break-keep">
+                                업로드하신 포트폴리오(이력서) 파일은 더 정교한 분석과 맞춤형 서비스 제공을 위해 <span className="font-bold text-[#111]">AI 학습 데이터로 활용</span>될 수 있습니다.<br/><br/>동의하시겠습니까?
+                            </p>
+                            <div className="flex gap-2 w-full">
+                                <button onClick={() => setShowAiWarning(false)} className="flex-1 py-3.5 bg-[#F4F4F5] text-[#666] rounded-[16px] font-bold text-[14px] hover:bg-[#E4E4E7] transition-colors">
+                                    취소
+                                </button>
+                                <button onClick={proceedNext} className="flex-[1.5] py-3.5 bg-[#FF5A00] text-white rounded-[16px] font-bold text-[14px] shadow-md hover:bg-[#E65100] transition-colors">
+                                    동의하고 계속
+                                </button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
         </div>
     )
 }
