@@ -6,11 +6,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 // src/assets/ 폴더에 이미지를 저장하고 이름을 각각 folder.png, chart.png로 맞춰주세요.
 import folderImg from './assets/folder.png';
 import chartImg from './assets/chart.png';
+import { useDragScroll } from './hooks/useDragScroll';
 
 export default function First({ onStart }) {
     const [expandedTrack, setExpandedTrack] = useState(null);
     const [currentSlide, setCurrentSlide] = useState(0);
-    const sliderRef = useRef(null);
+    const dragScroll = useDragScroll();
+    const sliderRef = dragScroll.ref;
 
     const slides = [
         {
@@ -119,9 +121,14 @@ export default function First({ onStart }) {
 
                     {/* Slider */}
                     <div
-                        className="flex-1 flex overflow-x-auto snap-x snap-mandatory scrollbar-hide"
+                        className="flex-1 flex overflow-x-auto snap-x snap-mandatory scrollbar-hide select-none"
                         onScroll={handleScroll}
                         ref={sliderRef}
+                        onMouseDown={dragScroll.onMouseDown}
+                        onMouseLeave={dragScroll.onMouseLeave}
+                        onMouseUp={dragScroll.onMouseUp}
+                        onMouseMove={dragScroll.onMouseMove}
+                        style={dragScroll.style}
                     >
                         {slides.map(slide => (
                             <div key={slide.id} className="w-full h-full flex-shrink-0 snap-start overflow-y-auto px-6 pb-10">
